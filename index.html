@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats - Projet Jeu RSE Weevup</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf.js pour l'export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        weevup: {
+                            light: '#4ade80',
+                            DEFAULT: '#16a34a',
+                            dark: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-12">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-br from-weevup-dark via-weevup to-teal-500 text-white py-16 px-4 md:px-8 shadow-xl rounded-b-[3rem] mb-10 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        <div class="max-w-6xl mx-auto relative z-10 text-center">
+            <span class="inline-block py-1 px-3 rounded-full bg-white/20 text-sm font-semibold tracking-wider mb-4 border border-white/30 backdrop-blur-sm">RÉSULTATS DE L'ENQUÊTE INTERNE</span>
+            <h1 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">Le Futur Jeu RSE de Weevup</h1>
+            <p class="text-base md:text-xl opacity-90 max-w-2xl mx-auto">Et vous, à quoi avez-vous envie de jouer ? Découvrez ce qui fait vibrer l'équipe pour concevoir notre futur best-seller.</p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-8 space-y-8">
+
+        <!-- Section 1: Profil & Motivations -->
+        <section class="grid md:grid-cols-2 gap-8">
+            <div class="glass-card rounded-3xl p-6 md:p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg"><i class="fas fa-heart"></i></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Moteurs de Motivation</h2>
+                </div>
+                <p class="text-slate-500 mb-6 text-sm">Qu'est-ce qui motive l'équipe pour jouer ? (Choix multiples)</p>
+                <div class="relative h-64">
+                    <canvas id="motivationChart"></canvas>
+                </div>
+                <div class="mt-4 bg-blue-50 p-4 rounded-xl text-sm text-blue-800 border border-blue-100">
+                    <strong>💡 Insight :</strong> L'équipe veut avant tout <strong>décompresser</strong> (8/9), <strong>collaborer</strong> (6/9) et être en <strong>immersion</strong> (6/9). La compétition n'attire que la moitié de l'équipe (4/9).
+                </div>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 md:p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-lg"><i class="fas fa-puzzle-piece"></i></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Mécaniques Préférées</h2>
+                </div>
+                <p class="text-slate-500 mb-6 text-sm">Les mécaniques les plus amusantes selon vous.</p>
+                <div class="relative h-64">
+                    <canvas id="mechanicsChart"></canvas>
+                </div>
+                <div class="mt-4 bg-purple-50 p-4 rounded-xl text-sm text-purple-800 border border-purple-100">
+                    <strong>🎯 En tête :</strong> Le <strong>bluff/rôles cachés</strong> et l'<strong>association d'idées</strong> dominent à égalité avec 6 votes sur 9 ! La négociation suit de près (4/9).
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Formats & Thématiques -->
+        <section class="grid md:grid-cols-3 gap-8">
+            <!-- Formats -->
+            <div class="glass-card rounded-3xl p-6 col-span-1 md:col-span-1">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg"><i class="fas fa-box-open"></i></div>
+                    <h2 class="text-xl font-bold text-slate-800">Formats de Jeu</h2>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Challenge Multi-activités</span><span>6/9</span></div>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-500 h-2.5 rounded-full" style="width: 67%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Escape Game / Enquête</span><span>5/9</span></div>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-500 h-2.5 rounded-full" style="width: 56%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Plateau / Stratégie</span><span>4/9</span></div>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-400 h-2.5 rounded-full" style="width: 44%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Construction (Maker)</span><span>4/9</span></div>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-400 h-2.5 rounded-full" style="width: 44%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold text-slate-600">Phygital</span><span class="text-slate-600">2/9</span></div>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-300 h-2.5 rounded-full" style="width: 22%"></div></div>
+                    </div>
+                </div>
+
+                <div class="mt-8 border-t border-slate-100 pt-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm"><i class="fas fa-hourglass-half"></i></div>
+                        <h3 class="font-bold text-slate-800">Durée idéale</h3>
+                    </div>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-center gap-2"><i class="fas fa-circle text-red-500 text-xs"></i> Court (45m - 1h) : <strong>4 votes</strong></li>
+                        <li class="flex items-center gap-2"><i class="fas fa-circle text-orange-500 text-xs"></i> Classique (1h15 - 1h30) : <strong>3 votes</strong></li>
+                        <li class="flex items-center gap-2"><i class="fas fa-circle text-green-600 text-xs"></i> Temps fort long (2h+) : <strong>1 vote</strong></li>
+                        <li class="flex items-start gap-2"><i class="fas fa-circle text-purple-600 text-xs mt-1"></i> <span class="leading-tight">Dépend du jeu : <strong>1 vote</strong></span></li>
+                    </ul>
+                </div>
+                
+                <div class="mt-6 bg-amber-50 p-4 rounded-xl text-sm text-amber-800 border border-amber-100">
+                    <strong>💡 Insight :</strong> Le format favori est le <strong>Challenge Multi-activités</strong> (6/9), idéalement sur une durée <strong>courte de 45m à 1h</strong> (4/9).
+                </div>
+            </div>
+
+            <!-- RSE Themes -->
+            <div class="glass-card rounded-3xl p-6 col-span-1 md:col-span-2">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-weevup-light/30 text-weevup-dark flex items-center justify-center text-lg"><i class="fas fa-leaf"></i></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Thématiques RSE Prioritaires</h2>
+                </div>
+                <p class="text-slate-500 mb-6 text-sm">Les sujets que l'équipe souhaite aborder en priorité (Top 3 demandé).</p>
+                
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <!-- Top 1 -->
+                    <div class="bg-gradient-to-r from-weevup to-teal-500 p-4 rounded-2xl text-white shadow-md flex items-center gap-4">
+                        <div class="text-3xl font-bold">1</div>
+                        <div>
+                            <h3 class="font-bold">Engagement Solidaire</h3>
+                            <p class="text-xs opacity-90">Impact local & associations (6 votes)</p>
+                        </div>
+                    </div>
+                    <!-- Top 2 ex aequo -->
+                    <div class="bg-white border-2 border-weevup-light p-4 rounded-2xl text-slate-700 flex items-center gap-4">
+                        <div class="text-2xl font-bold text-weevup">2</div>
+                        <div>
+                            <h3 class="font-bold">Économie Circulaire</h3>
+                            <p class="text-xs text-slate-500">Zéro déchet, anti-gaspi (5 votes)</p>
+                        </div>
+                    </div>
+                    <div class="bg-white border-2 border-weevup-light p-4 rounded-2xl text-slate-700 flex items-center gap-4">
+                        <div class="text-2xl font-bold text-weevup">2</div>
+                        <div>
+                            <h3 class="font-bold">Diversité & Inclusion</h3>
+                            <p class="text-xs text-slate-500">Handicap (5 votes)</p>
+                        </div>
+                    </div>
+                    <!-- Mentions honorables -->
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-600 flex items-center gap-4">
+                        <div class="text-xl font-bold text-slate-400"><i class="fas fa-medal"></i></div>
+                        <div>
+                            <h3 class="font-bold">Climat & Éthique</h3>
+                            <p class="text-xs text-slate-500">Mentions honorables (4 votes chacun)</p>
+                        </div>
+                    </div>
+                    <!-- Qualité de Vie -->
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-600 flex items-center gap-4">
+                        <div class="text-xl font-bold text-slate-400"><i class="fas fa-spa"></i></div>
+                        <div>
+                            <h3 class="font-bold">Qualité de Vie (QVCT)</h3>
+                            <p class="text-xs text-slate-500">3 votes</p>
+                        </div>
+                    </div>
+                    <!-- Numérique responsable -->
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-600 flex items-center gap-4">
+                        <div class="text-xl font-bold text-slate-400"><i class="fas fa-laptop"></i></div>
+                        <div>
+                            <h3 class="font-bold">Numérique responsable</h3>
+                            <p class="text-xs text-slate-500">1 vote</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storytelling -->
+                <div class="mt-8 border-t border-slate-100 pt-6 grid sm:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold text-slate-800 mb-3"><i class="fas fa-book-open text-indigo-500 mr-2"></i> Univers souhaité</h3>
+                        <div class="space-y-2 text-sm">
+                            
+                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
+                                <span>🚀 Science-Fiction</span><span class="font-bold">5</span>
+                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
+                                    Conquérir une nouvelle planète et devoir inventer de toutes pièces un nouveau modèle de société.
+                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
+                                <span>🚨 Thriller / Urgence</span><span class="font-bold">4</span>
+                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
+                                    Un lanceur d'alerte a hacké le système, c'est une course contre la montre pour éviter un scandale.
+                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                </div>
+                            </div>
+
+                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
+                                <span>🕵️ Enquête Policière</span><span class="font-bold">4</span>
+                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
+                                    Façon Cluedo ou "Murder Party", trouver le coupable au sein de l'entreprise.
+                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                </div>
+                            </div>
+
+                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
+                                <span>🌱 Utopie / Solarpunk</span><span class="font-bold">3</span>
+                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
+                                    Nous sommes en 2050, le monde va bien, on construit une ville idéale.
+                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                </div>
+                            </div>
+
+                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
+                                <span>🦹 Incarner les "Méchants"</span><span class="font-bold">3</span>
+                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
+                                    Jouer la pire entreprise du monde (pollueurs) pour comprendre les enjeux par l'absurde.
+                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 mb-3"><i class="fas fa-masks-theater text-pink-500 mr-2"></i> Le ton idéal</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Léger & Autodérision (3)</span>
+                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">Sérieux / Instructif (2)</span>
+                            <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">Mystérieux / Suspense (2)</span>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Inspirant / Positif (2)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-teal-50 p-4 rounded-xl text-sm text-teal-800 border border-teal-100">
+                    <strong>💡 Insight :</strong> L'équipe veut s'investir dans l'<strong>Engagement Solidaire</strong> (6/9), le tout plongé dans un univers de <strong>Science-Fiction</strong> (5/9) traité avec <strong>légèreté et autodérision</strong> (3/9).
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Boîte à idées (Verbatims) -->
+        <section>
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-8 mt-4"><i class="fas fa-lightbulb text-yellow-400 mr-3"></i>La Boîte à Idées Weevup</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Card 1 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-indigo-500 relative">
+                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
+                    <h3 class="font-bold text-indigo-600 mb-2">Un "Monopoly" de l'environnement</h3>
+                    <p class="text-sm text-slate-600 italic">"Pour gagner des terrains il faut faire des bonnes actions. Dans ce jeu, on parlerait pas en argent mais en points RSE. Plus tu fais de bonnes actions, plus tu as de points..."</p>
+                    <div class="mt-4 text-xs font-semibold text-slate-400">— Alice</div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-pink-500 relative">
+                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
+                    <h3 class="font-bold text-pink-600 mb-2">Inspiré du Loup-Garou</h3>
+                    <p class="text-sm text-slate-600 italic">"Chaque personnage a un rôle secret (donc une carte secrète) avec un pouvoir unique - cela permet d'inclure tout le monde et chacun se sent impliqué dans le groupe."</p>
+                    <div class="mt-4 text-xs font-semibold text-slate-400">— Juliya & Marilou</div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-weevup relative">
+                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
+                    <h3 class="font-bold text-weevup-dark mb-2">Impact réel (Maker)</h3>
+                    <p class="text-sm text-slate-600 italic">"L'objectif serait d'aider les personnes dans le besoin... par exemple construire des lampes envoyées aux enfants qui vivent sans électricité pour les aider dans leur éducation et santé."</p>
+                    <div class="mt-4 text-xs font-semibold text-slate-400">— Juliya</div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-amber-500 relative">
+                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
+                    <h3 class="font-bold text-amber-600 mb-2">Escape Game & Comédiens</h3>
+                    <p class="text-sm text-slate-600 italic">"Un escape game géant pour sauver la planète en s'amusant. / Faire venir des comédiens dans un lieu insolite pour animer le TB."</p>
+                    <div class="mt-4 text-xs font-semibold text-slate-400">— Marie & Justine</div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-blue-500 relative">
+                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
+                    <h3 class="font-bold text-blue-600 mb-2">Mécaniques de jeux modernes</h3>
+                    <p class="text-sm text-slate-600 italic">"Times Up, faire deviner des mots et/ou phrases... / J'adore les jeux Skull King, Splendor, Rebelles Princesses, The Game, Lost Cities..."</p>
+                    <div class="mt-4 text-xs font-semibold text-slate-400">— Justine & Camille</div>
+                </div>
+
+                 <!-- Card 6 -->
+                 <div class="glass-card rounded-2xl p-6 border-t-4 border-t-red-500 relative bg-slate-50">
+                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
+                    <h3 class="font-bold text-red-600 mb-2">L'idée choc</h3>
+                    <p class="text-sm text-slate-600 italic">"Dans tous nos team buildings, faire un jeu ice-breaker obligatoire de sensibilisation choc et réaliste."</p>
+                    <div class="mt-4 text-xs font-semibold text-slate-400">— Alice</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 3.5: Le Portrait-Robot du Jeu Parfait -->
+        <section class="bg-gradient-to-r from-weevup-dark via-weevup to-teal-500 rounded-[2rem] p-6 md:p-10 text-white shadow-xl relative overflow-hidden mt-4">
+            <div class="absolute top-0 right-0 opacity-10 text-9xl transform translate-x-8 -translate-y-8"><i class="fas fa-trophy"></i></div>
+            <div class="relative z-10">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex shrink-0 items-center justify-center text-2xl backdrop-blur-sm"><i class="fas fa-star text-yellow-300"></i></div>
+                    <h2 class="text-2xl md:text-4xl font-bold">Le Portrait-Robot du Jeu Parfait</h2>
+                </div>
+                <p class="mb-8 opacity-90 text-base md:text-lg">En combinant toutes les premières places de vos votes, voici la recette de notre futur best-seller :</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+                        <i class="fas fa-face-laugh-squint text-2xl mb-2 text-yellow-300"></i>
+                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Objectif</div>
+                        <div class="font-bold text-sm">Détente & Rire</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+                        <i class="fas fa-masks-theater text-2xl mb-2 text-purple-300"></i>
+                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Mécanique</div>
+                        <div class="font-bold text-sm leading-tight">Bluff & Rôles cachés</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+                        <i class="fas fa-stopwatch text-2xl mb-2 text-amber-300"></i>
+                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Format</div>
+                        <div class="font-bold text-sm leading-tight">Challenge multi-activités (45m-1h)</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+                        <i class="fas fa-hand-holding-heart text-2xl mb-2 text-red-300"></i>
+                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Thématique</div>
+                        <div class="font-bold text-sm leading-tight">Engagement Solidaire</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+                        <i class="fas fa-rocket text-2xl mb-2 text-blue-300"></i>
+                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Univers</div>
+                        <div class="font-bold text-sm leading-tight">Science-Fiction</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+                        <i class="fas fa-feather text-2xl mb-2 text-green-300"></i>
+                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Le Ton</div>
+                        <div class="font-bold text-sm leading-tight">Léger & Autodérision</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: IA Brainstorming (Gemini API) -->
+        <section class="glass-card rounded-3xl p-6 md:p-8 border-t-4 border-t-weevup">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-weevup-light/30 text-weevup-dark flex shrink-0 items-center justify-center text-lg"><i class="fas fa-robot"></i></div>
+                <h2 class="text-2xl font-bold text-slate-800">Brainstorming interactif IA</h2>
+            </div>
+            <p class="text-slate-500 mb-6 text-sm">Cliquez sur les paramètres ci-dessous pour les modifier, ajoutez vos instructions (optionnel), et laissez l'IA créer le concept parfait !</p>
+            
+            <!-- Grille interactive des paramètres -->
+            <div id="aiParamGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                <!-- Rempli par JavaScript -->
+            </div>
+
+            <!-- Instructions supplémentaires -->
+            <div class="mb-6">
+                <label for="aiExtraInstructions" class="block text-sm font-bold text-slate-700 mb-2"><i class="fas fa-comment-dots text-weevup mr-2"></i>Instructions supplémentaires (Optionnel)</label>
+                <textarea id="aiExtraInstructions" rows="2" class="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-weevup focus:border-transparent text-sm" placeholder="Ex: Ajoute un twist où les équipes doivent construire un objet physique, fais en sorte que ça se joue en extérieur..."></textarea>
+            </div>
+            
+            <div class="flex flex-wrap gap-4">
+                <button id="btnGenerateAI" class="bg-gradient-to-r from-weevup-dark to-weevup hover:from-weevup hover:to-weevup-light text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2">
+                    <i class="fas fa-magic"></i> Générer un concept
+                </button>
+                <button id="btnExportPDF" class="hidden bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-file-pdf text-red-400"></i> Exporter en PDF
+                </button>
+            </div>
+            
+            <div id="aiResultContainer" class="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200 hidden">
+                <div id="aiLoading" class="hidden flex flex-col items-center justify-center py-4">
+                    <i class="fas fa-circle-notch fa-spin text-3xl text-weevup mb-2"></i>
+                    <p class="text-sm text-slate-500 animate-pulse">L'IA réfléchit au concept parfait...</p>
+                </div>
+                <div id="aiContent" class="text-slate-700 whitespace-pre-wrap leading-relaxed"></div>
+                <div id="aiError" class="hidden text-red-500 text-sm mt-2"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16 text-center text-slate-400 text-sm">
+        <p>Infographie interactive générée à partir des réponses du formulaire "Projet Jeu RSE Weevup".</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Configuration globale de Chart.js
+        Chart.defaults.font.family = "'Poppins', sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // 1. Graphique des Motivations
+        const ctxMotivation = document.getElementById('motivationChart').getContext('2d');
+        new Chart(ctxMotivation, {
+            type: 'bar',
+            data: {
+                labels: ['Détente (Rire)', 'Collaboration', 'Immersion', 'Compétition', 'Utilité (Sens)', 'Réflexion', 'Action/Dynamisme', 'Récompense'],
+                datasets: [{
+                    label: 'Nombre de votes',
+                    data: [8, 6, 6, 4, 4, 2, 2, 1],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)', // blue
+                        'rgba(59, 130, 246, 0.6)', 
+                        'rgba(59, 130, 246, 0.6)', 
+                        'rgba(148, 163, 184, 0.5)',
+                        'rgba(148, 163, 184, 0.5)',
+                        'rgba(148, 163, 184, 0.5)',
+                        'rgba(148, 163, 184, 0.5)',
+                        'rgba(148, 163, 184, 0.3)'
+                    ],
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 9,
+                        ticks: { stepSize: 1 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { borderDash: [4, 4] }
+                    }
+                }
+            }
+        });
+
+        // 2. Graphique des Mécaniques
+        const ctxMechanics = document.getElementById('mechanicsChart').getContext('2d');
+        new Chart(ctxMechanics, {
+            type: 'bar',
+            data: {
+                labels: ['Bluff / Rôles cachés', "Association d'idées", 'Gestion / Négo', 'Coop. asymétrique', 'Hasard / Risque'],
+                datasets: [{
+                    label: 'Nombre de votes',
+                    data: [6, 6, 4, 3, 1],
+                    backgroundColor: [
+                        'rgba(168, 85, 247, 0.8)', // purple
+                        'rgba(168, 85, 247, 0.8)',
+                        'rgba(148, 163, 184, 0.5)',
+                        'rgba(148, 163, 184, 0.5)',
+                        'rgba(148, 163, 184, 0.3)'
+                    ],
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 9,
+                        ticks: { stepSize: 1 },
+                        grid: { borderDash: [4, 4] }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 3. IA LLM Feature (Gemini API Integration) avec Paramètres Dynamiques et Export PDF
+        const btnGenerateAI = document.getElementById('btnGenerateAI');
+        const btnExportPDF = document.getElementById('btnExportPDF');
+        const aiResultContainer = document.getElementById('aiResultContainer');
+        const aiLoading = document.getElementById('aiLoading');
+        const aiContent = document.getElementById('aiContent');
+        const aiError = document.getElementById('aiError');
+        const aiExtraInstructions = document.getElementById('aiExtraInstructions');
+
+        // Configuration des options issues de l'enquête
+        const aiOptions = {
+            objective: {
+                title: "Objectif", icon: "fa-face-laugh-squint", color: "text-yellow-500", bgHover: "hover:bg-yellow-50", borderHover: "hover:border-yellow-300",
+                choices: ["Détente & Rire", "Collaboration", "Immersion", "Compétition", "Utilité (Sens)", "Réflexion", "Action & Dynamisme"]
+            },
+            mechanic: {
+                title: "Mécanique", icon: "fa-masks-theater", color: "text-purple-500", bgHover: "hover:bg-purple-50", borderHover: "hover:border-purple-300",
+                choices: ["Bluff & Rôles cachés", "Association d'idées", "Gestion & Négociation", "Coopération asymétrique", "Hasard & Risque"]
+            },
+            format: {
+                title: "Format", icon: "fa-stopwatch", color: "text-amber-500", bgHover: "hover:bg-amber-50", borderHover: "hover:border-amber-300",
+                choices: ["Challenge multi-activités", "Escape Game / Enquête", "Plateau / Stratégie", "Construction (Maker)", "Phygital"]
+            },
+            theme: {
+                title: "Thématique", icon: "fa-hand-holding-heart", color: "text-red-500", bgHover: "hover:bg-red-50", borderHover: "hover:border-red-300",
+                choices: ["Engagement Solidaire", "Économie Circulaire", "Diversité & Inclusion", "Climat & Énergie", "Éthique & Transparence", "Qualité de Vie (QVCT)", "Numérique responsable"]
+            },
+            universe: {
+                title: "Univers", icon: "fa-rocket", color: "text-blue-500", bgHover: "hover:bg-blue-50", borderHover: "hover:border-blue-300",
+                choices: ["Science-Fiction", "Thriller / Urgence", "Enquête Policière", "Utopie / Solarpunk", "Incarner les 'Méchants'"]
+            },
+            tone: {
+                title: "Le Ton", icon: "fa-feather", color: "text-green-500", bgHover: "hover:bg-green-50", borderHover: "hover:border-green-300",
+                choices: ["Léger & Autodérision", "Sérieux / Instructif", "Mystérieux / Suspense", "Inspirant / Positif"]
+            }
+        };
+
+        // État actuel des sélections (index 0 = le choix n°1 de l'équipe)
+        const aiState = { objective: 0, mechanic: 0, format: 0, theme: 0, universe: 0, tone: 0 };
+
+        // Fonction pour dessiner la grille interactive
+        function renderAiGrid() {
+            const grid = document.getElementById('aiParamGrid');
+            grid.innerHTML = '';
+            Object.keys(aiOptions).forEach(key => {
+                const opt = aiOptions[key];
+                const currentChoice = opt.choices[aiState[key]];
+                grid.innerHTML += `
+                    <div class="cursor-pointer bg-white ${opt.bgHover} border border-slate-200 ${opt.borderHover} p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition-all group flex flex-col justify-center items-center" onclick="cycleAiOption('${key}')" title="Cliquez pour changer d'option">
+                        <i class="fas ${opt.icon} text-2xl mb-2 ${opt.color} group-hover:scale-110 transition-transform"></i>
+                        <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-1 flex justify-center items-center gap-1 w-full">
+                            ${opt.title} <i class="fas fa-sync-alt text-[8px] opacity-40 group-hover:rotate-180 transition-transform duration-300"></i>
+                        </div>
+                        <div class="font-bold text-sm text-slate-700 leading-tight select-none">${currentChoice}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Fonction pour passer au choix suivant au clic
+        window.cycleAiOption = function(key) {
+            aiState[key] = (aiState[key] + 1) % aiOptions[key].choices.length;
+            renderAiGrid();
+            // Cacher le bouton PDF si on modifie les paramètres, ça invite à regénérer
+            btnExportPDF.classList.add('hidden');
+        };
+
+        // Initialisation de la grille
+        renderAiGrid();
+
+        async function fetchGeminiResponse(prompt) {
+            const apiKey = ""; // Clé injectée par l'environnement
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            let retries = 5;
+            let delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucune réponse générée.";
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        btnGenerateAI.addEventListener('click', async () => {
+            aiResultContainer.classList.remove('hidden');
+            btnExportPDF.classList.add('hidden');
+            aiLoading.classList.remove('hidden');
+            aiContent.classList.add('hidden');
+            aiError.classList.add('hidden');
+            aiContent.innerHTML = '';
+            
+            const selectedParams = {
+                objectif: aiOptions.objective.choices[aiState.objective],
+                mecanique: aiOptions.mechanic.choices[aiState.mechanic],
+                format: aiOptions.format.choices[aiState.format],
+                thematique: aiOptions.theme.choices[aiState.theme],
+                univers: aiOptions.universe.choices[aiState.universe],
+                ton: aiOptions.tone.choices[aiState.tone]
+            };
+            const extra = aiExtraInstructions.value.trim();
+
+            const promptContext = `Tu es un concepteur expert en jeux de team building RSE. L'équipe 'Weevup' souhaite créer son futur best-seller.
+            Génère UN concept de jeu ultra-original sous forme de 'pitch' (Titre accrocheur, Contexte, But du jeu, Mécanique principale) en utilisant STRICTEMENT ces paramètres :
+            - Objectif principal de l'expérience : ${selectedParams.objectif}
+            - Mécanique clé de gameplay : ${selectedParams.mecanique}
+            - Format : ${selectedParams.format}
+            - Thématique RSE : ${selectedParams.thematique}
+            - Univers narratif : ${selectedParams.univers}
+            - Ton de l'animation : ${selectedParams.ton}
+            ${extra ? `\nInstructions supplémentaires et spécifiques de l'équipe : "${extra}"` : ''}
+            
+            Rédige en français, de façon très structurée (avec des puces et des titres en gras) en environ 3 ou 4 paragraphes dynamiques et inspirants pour donner envie à l'équipe.`;
+            
+            try {
+                const text = await fetchGeminiResponse(promptContext);
+                
+                // Nettoyage Markdown -> HTML basique
+                const formattedText = text
+                    .replace(/### (.*?)\n/g, '<h3 class="text-xl font-bold mt-4 mb-2 text-weevup-dark">$1</h3>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-800">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/\n/g, '<br>');
+                    
+                aiContent.innerHTML = formattedText;
+                aiContent.classList.remove('hidden');
+                btnExportPDF.classList.remove('hidden'); // Afficher le bouton PDF après succès
+            } catch (err) {
+                aiError.textContent = "Oups, une erreur s'est produite lors de la connexion à l'IA. Veuillez réessayer.";
+                aiError.classList.remove('hidden');
+            } finally {
+                aiLoading.classList.add('hidden');
+            }
+        });
+
+        // Fonctionnalité d'export PDF
+        btnExportPDF.addEventListener('click', () => {
+            // Indiquer le chargement sur le bouton
+            const originalText = btnExportPDF.innerHTML;
+            btnExportPDF.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Génération...';
+            btnExportPDF.disabled = true;
+
+            // Création d'un élément conteneur invisible optimisé pour l'impression PDF
+            const element = document.createElement('div');
+            element.style.padding = '40px';
+            element.style.fontFamily = 'Arial, sans-serif';
+            element.style.color = '#1e293b';
+            element.style.lineHeight = '1.6';
+            element.style.backgroundColor = '#ffffff';
+            element.style.width = '800px'; // Forcer une largeur pour html2canvas
+            element.style.position = 'absolute'; // Sortir du flux normal
+            element.style.left = '-9999px'; // Cacher l'élément hors de l'écran
+            element.style.top = '0';
+            
+            const extra = aiExtraInstructions.value.trim();
+            
+            element.innerHTML = `
+                <div style="border-bottom: 3px solid #16a34a; padding-bottom: 10px; margin-bottom: 30px;">
+                    <h1 style="color: #14532d; font-size: 28px; margin: 0;">Concept de Jeu RSE Weevup</h1>
+                    <p style="color: #64748b; margin-top: 5px; font-size: 14px;">Généré par intelligence artificielle le ${new Date().toLocaleDateString('fr-FR')}</p>
+                </div>
+                
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                    <h3 style="color: #16a34a; margin-top: 0; font-size: 18px; margin-bottom: 15px;">Paramètres de conception :</h3>
+                    <ul style="margin:0; padding-left: 20px; font-size: 14px; list-style-type: square;">
+                        <li style="margin-bottom: 8px;"><b>Objectif :</b> ${aiOptions.objective.choices[aiState.objective]}</li>
+                        <li style="margin-bottom: 8px;"><b>Mécanique :</b> ${aiOptions.mechanic.choices[aiState.mechanic]}</li>
+                        <li style="margin-bottom: 8px;"><b>Format :</b> ${aiOptions.format.choices[aiState.format]}</li>
+                        <li style="margin-bottom: 8px;"><b>Thématique :</b> ${aiOptions.theme.choices[aiState.theme]}</li>
+                        <li style="margin-bottom: 8px;"><b>Univers :</b> ${aiOptions.universe.choices[aiState.universe]}</li>
+                        <li style="margin-bottom: 8px;"><b>Ton :</b> ${aiOptions.tone.choices[aiState.tone]}</li>
+                    </ul>
+                    ${extra ? `<div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1; font-size: 14px;"><b>Consignes supplémentaires :</b> <i>"${extra}"</i></div>` : ''}
+                </div>
+                
+                <div style="font-size: 15px;">
+                    ${aiContent.innerHTML}
+                </div>
+            `;
+
+            // CRUCIAL : Ajouter au body pour que la librairie puisse capturer l'élément
+            document.body.appendChild(element);
+
+            // Options de html2pdf
+            const opt = {
+                margin:       15,
+                filename:     'Concept_Weevup_Brainstorming.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Génération et nettoyage
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.removeChild(element); // Nettoyer le dom
+                btnExportPDF.innerHTML = originalText;
+                btnExportPDF.disabled = false;
+            }).catch(err => {
+                console.error("Erreur PDF :", err);
+                document.body.removeChild(element);
+                btnExportPDF.innerHTML = '<i class="fas fa-file-pdf text-red-400"></i> Erreur, réessayer';
+                btnExportPDF.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
