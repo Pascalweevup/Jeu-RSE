@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Résultats - Projet Jeu RSE Weevup</title>
+    <title>WEEVUP | Le Jeu RSE Ultime</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- html2pdf.js pour l'export PDF -->
+    <!-- html2pdf.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@700;900&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -20,13 +20,45 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Poppins', 'sans-serif'],
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        hand: ['Caveat', 'cursive'],
                     },
                     colors: {
-                        weevup: {
-                            light: '#4ade80',
-                            DEFAULT: '#16a34a',
-                            dark: '#14532d',
+                        neo: {
+                            green: '#4ade80',
+                            yellow: '#fde047',
+                            pink: '#f472b6',
+                            blue: '#60a5fa',
+                            orange: '#fb923c',
+                            purple: '#a78bfa',
+                            dark: '#0f172a',
+                            bg: '#fefce8'
+                        }
+                    },
+                    boxShadow: {
+                        'neo': '6px 6px 0px 0px rgba(15, 23, 42, 1)',
+                        'neo-hover': '10px 10px 0px 0px rgba(15, 23, 42, 1)',
+                        'neo-sm': '4px 4px 0px 0px rgba(15, 23, 42, 1)',
+                    },
+                    animation: {
+                        'marquee': 'marquee 30s linear infinite',
+                        'wiggle': 'wiggle 3s ease-in-out infinite',
+                        'pop': 'pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'spin-fast': 'spin 0.4s ease-in-out'
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        },
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.5)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
                         }
                     }
                 }
@@ -34,565 +66,1171 @@
         }
     </script>
     <style>
-        body {
-            background-color: #f8fafc;
+        /* Tuer les puces natives du navigateur de façon globale */
+        ul, ol, li {
+            list-style: none !important;
+            list-style-type: none !important;
+            margin: 0; padding: 0;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+
+        body {
+            background-color: #fefce8; /* neo-bg */
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 30px 30px;
+            color: #0f172a;
+            /* Curseur Réticule */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%230f172a" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"><path d="M12 2v20M2 12h20"/></svg>') 12 12, auto;
+            overflow-x: hidden;
+        }
+
+        .border-neo {
+            border: 4px solid #0f172a;
+        }
+
+        /* Ruban de signalisation Chantier (Hazard Tape) */
+        .hazard-tape {
+            background: repeating-linear-gradient(45deg, #fde047, #fde047 15px, #0f172a 15px, #0f172a 30px);
+            height: 16px;
+            width: 100%;
+            border-top: 4px solid #0f172a;
+            border-bottom: 4px solid #0f172a;
+        }
+
+        /* Post-it Tape effect */
+        .tape {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            width: 140px;
+            height: 38px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-left: 3px dotted rgba(0, 0, 0, 0.5);
+            border-right: 3px dotted rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), inset 0 0 8px rgba(255,255,255,0.4);
+            z-index: 50; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .tape::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.8) 35%, transparent 40%, transparent 60%, rgba(255,255,255,0.8) 65%, transparent 70%);
+            mix-blend-mode: overlay;
+            pointer-events: none;
+        }
+        .tape:hover {
+            transform: translateX(-50%) rotate(-1deg) translateY(-3px) scale(1.05);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 12px -2px rgba(0,0,0,0.2), inset 0 0 8px rgba(255,255,255,0.6);
+        }
+
+        /* Hide scrollbar visually */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing !important; }
+
+        .marquee-wrapper {
+            display: flex;
+            overflow: hidden;
+            user-select: none;
+        }
+        .marquee-content {
+            display: flex;
+            flex-shrink: 0;
+            gap: 2rem;
+            min-width: 100%;
+        }
+        .marquee-wrapper:hover .marquee-content {
+            animation-play-state: paused;
+        }
+
+        /* --- Animations et Effets --- */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Mode Focus List */
+        .focus-list {
+            position: relative;
+        }
+        .focus-list > div {
+            transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+        }
+        .focus-list:hover > div:not(:hover) {
+            opacity: 0.3;
+            filter: grayscale(0.8);
+            transform: translateX(0) scale(0.98);
+        }
+
+        /* Apparition séquentielle */
+        .check-pop {
+            opacity: 0;
+            transform: scale(0);
+        }
+        .reveal.active .check-pop {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Effet Ticket Perforé */
+        .ticket-cut {
+            mask-image: radial-gradient(circle at 0 50%, transparent 6px, black 7px), radial-gradient(circle at 100% 50%, transparent 6px, black 7px);
+            mask-size: 51% 100%;
+            mask-position: left, right;
+            mask-repeat: no-repeat;
+            -webkit-mask-image: radial-gradient(circle at 0 50%, transparent 6px, black 7px), radial-gradient(circle at 100% 50%, transparent 6px, black 7px);
+            -webkit-mask-size: 51% 100%;
+            -webkit-mask-position: left, right;
+            -webkit-mask-repeat: no-repeat;
+        }
+
+        /* Curseur Pointeur sur éléments interactifs */
+        a, button, .cursor-pointer, input, .cursor-grab {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23f472b6" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>') 12 12, pointer !important;
+        }
+
+        /* Physique des boutons Brutalistes */
+        .btn-brutal {
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+        }
+        .btn-brutal:active {
+            transform: translate(6px, 6px) !important;
+            box-shadow: 0px 0px 0px 0px rgba(15, 23, 42, 1) !important;
+        }
+
+        /* 3D Tilt Effect Base Class */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Effet d'écran d'arcade (CRT) */
+        .crt-screen {
+            background-color: #0f172a;
+            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            box-shadow: inset 0 0 50px rgba(0,0,0,1);
+            color: #4ade80;
+            text-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+        }
+        
+        /* Animation des blocs d'énergie refondue */
+        .energy-block {
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .reveal.active .energy-block {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .energy-block:hover {
+            transform: scale(1.15) !important;
+            filter: brightness(1.2);
+            box-shadow: 4px 4px 0px 0px rgba(15, 23, 42, 1);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Effet Carte Holographique */
+        .holo-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .holo-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.8) 50%, transparent 55%);
+            transform: rotate(45deg) translateX(-150%);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 20;
+        }
+        .holo-card:hover::after {
+            transform: rotate(45deg) translateX(150%);
+        }
+
+        /* Effet Glitch Titre (Sporadique) */
+        .glitch-text {
+            position: relative;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 #f472b6;
+            animation: glitch-anim 4s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 #60a5fa;
+            animation: glitch-anim 3.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0%, 80% { clip: rect(0, 0, 0, 0); opacity: 0; }
+            81% { clip: rect(15px, 9999px, 91px, 0); opacity: 0.8; }
+            85% { clip: rect(61px, 9999px, 34px, 0); opacity: 0.8; }
+            90% { clip: rect(98px, 9999px, 81px, 0); opacity: 0.8; }
+            95% { clip: rect(4px, 9999px, 91px, 0); opacity: 0.8; }
+            100% { clip: rect(31px, 9999px, 12px, 0); opacity: 0.8; }
+        }
+
+        /* Ligne de balayage CRT */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(74,222,128,0.2) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.5;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            animation: scanline 6s linear infinite;
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(500%); }
+        }
+
+        /* Tier List Colors */
+        .tier-s { background-color: #fca5a5; } /* red-300 */
+        .tier-a { background-color: #fcd34d; } /* yellow-300 */
+        .tier-b { background-color: #86efac; } /* green-300 */
+        .tier-c { background-color: #93c5fd; } /* blue-300 */
+
+        /* Messy Cards (Portrait Robot) */
+        .messy-card:nth-child(odd) { transform: rotate(-2deg); }
+        .messy-card:nth-child(even) { transform: rotate(2deg); }
+        .messy-card:hover { transform: rotate(0deg) scale(1.05) translateY(-8px); }
+
+        /* AI Progress Bar */
+        @keyframes fillBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        .ai-progress-bar {
+            animation: fillBar 3s ease-in-out forwards;
+        }
+
+        /* Responsive Parallax Container */
+        .parallax-layer {
+            transition: transform 0.1s ease-out;
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased pb-12">
+<body class="antialiased selection:bg-neo-pink selection:text-white relative" id="body-container">
 
-    <!-- Header -->
-    <header class="bg-gradient-to-br from-weevup-dark via-weevup to-teal-500 text-white py-16 px-4 md:px-8 shadow-xl rounded-b-[3rem] mb-10 relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div class="max-w-6xl mx-auto relative z-10 text-center">
-            <span class="inline-block py-1 px-3 rounded-full bg-white/20 text-sm font-semibold tracking-wider mb-4 border border-white/30 backdrop-blur-sm">RÉSULTATS DE L'ENQUÊTE INTERNE</span>
-            <h1 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">Le Futur Jeu RSE de Weevup</h1>
-            <p class="text-base md:text-xl opacity-90 max-w-2xl mx-auto">Et vous, à quoi avez-vous envie de jouer ? Découvrez ce qui fait vibrer l'équipe pour concevoir notre futur best-seller.</p>
+    <!-- En-tête / Hero Section -->
+    <header class="relative min-h-[80vh] flex flex-col justify-center items-center px-6 overflow-hidden pt-20 pb-20">
+        
+        <!-- Floating decorative elements (Parallax Effect) -->
+        <div class="absolute top-10 left-10 parallax-layer" data-speed="-3">
+            <div class="text-6xl text-neo-blue animate-wiggle opacity-80"><i class="fas fa-gamepad"></i></div>
         </div>
+        <div class="absolute bottom-32 right-10 parallax-layer" data-speed="4">
+            <div class="text-7xl text-neo-pink animate-wiggle opacity-80" style="animation-delay: 1s;"><i class="fas fa-dice"></i></div>
+        </div>
+        <div class="absolute top-32 right-20 parallax-layer" data-speed="-2">
+            <div class="text-5xl text-neo-green animate-wiggle opacity-80" style="animation-delay: 0.5s;"><i class="fas fa-puzzle-piece"></i></div>
+        </div>
+
+        <!-- Sticker 100% Approuvé (Draggable) -->
+        <div id="sticker-100" class="absolute top-1/4 right-[15%] w-32 h-32 bg-neo-yellow border-neo shadow-neo rounded-full flex items-center justify-center transform rotate-12 animate-pop z-50 cursor-grab hover:scale-105 transition-transform" style="animation-delay: 1s;" title="Déplace-moi !">
+            <div class="absolute inset-2 border-2 border-dashed border-neo-dark rounded-full pointer-events-none"></div>
+            <div class="text-center font-display font-black uppercase text-neo-dark leading-none pointer-events-none">
+                <span class="text-3xl block">100%</span>
+                <span class="text-sm">Approuvé</span>
+            </div>
+        </div>
+
+        <div class="relative z-10 text-center w-full max-w-5xl mx-auto">
+            
+            <div class="inline-block bg-neo-yellow border-neo shadow-neo px-6 py-2 rounded-full font-display text-xl font-bold uppercase tracking-widest mb-8 rotate-2 hover:rotate-0 transition-transform cursor-default">
+                Mission Bêta : Enquête Interne
+            </div>
+            
+            <h1 class="font-display text-6xl md:text-8xl font-black leading-tight tracking-tighter mb-8 text-neo-dark uppercase glitch-text" data-text="Le Jeu RSE">
+                Le Jeu RSE <br>
+                <span class="bg-neo-green px-4 py-1 inline-block -rotate-2 mt-2 border-neo shadow-neo text-neo-dark">Parfait.</span>
+            </h1>
+            
+            <p class="font-hand text-3xl md:text-4xl max-w-2xl mx-auto mb-16 text-slate-700 leading-relaxed">
+                "On a demandé à l'équipe ce qui la faisait vibrer. Voici la recette secrète de notre futur hit Weevup !"
+            </p>
+        </div>
+
+        <!-- ARCADE PRESS START -->
+        <button class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-neo-dark animate-pulse cursor-pointer hover:scale-110 transition-transform z-20 focus:outline-none border-none bg-transparent" onclick="pressStart()">
+            <span class="font-display font-black uppercase tracking-widest text-xl bg-neo-yellow px-4 py-2 border-neo shadow-neo-sm transform -rotate-2">Press Start</span>
+            <i class="fas fa-caret-down text-4xl mt-1"></i>
+        </button>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 md:px-8 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-32">
 
-        <!-- Section 1: Profil & Motivations -->
-        <section class="grid md:grid-cols-2 gap-8">
-            <div class="glass-card rounded-3xl p-6 md:p-8">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg"><i class="fas fa-heart"></i></div>
-                    <h2 class="text-2xl font-bold text-slate-800">Moteurs de Motivation</h2>
-                </div>
-                <p class="text-slate-500 mb-6 text-sm">Qu'est-ce qui motive l'équipe pour jouer ? (Choix multiples)</p>
-                <div class="relative h-64">
-                    <canvas id="motivationChart"></canvas>
-                </div>
-                <div class="mt-4 bg-blue-50 p-4 rounded-xl text-sm text-blue-800 border border-blue-100">
-                    <strong>💡 Insight :</strong> L'équipe veut avant tout <strong>décompresser</strong> (8/9), <strong>collaborer</strong> (6/9) et être en <strong>immersion</strong> (6/9). La compétition n'attire que la moitié de l'équipe (4/9).
+        <!-- Section 1: Motivations (Tier List) -->
+        <section id="tier-list" class="reveal">
+            <div class="mb-12 flex flex-col md:flex-row items-center gap-6">
+                <div class="w-16 h-16 bg-neo-yellow border-neo shadow-neo flex items-center justify-center text-3xl rotate-12 shrink-0"><i class="fas fa-heart"></i></div>
+                <div>
+                    <h2 class="font-display text-5xl font-black uppercase">Tier List des Motivations</h2>
+                    <p class="font-sans font-semibold text-slate-600 text-lg mt-2">Ce qui nous donne envie de jouer, du rang S au rang C.</p>
                 </div>
             </div>
 
-            <div class="glass-card rounded-3xl p-6 md:p-8">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-lg"><i class="fas fa-puzzle-piece"></i></div>
-                    <h2 class="text-2xl font-bold text-slate-800">Mécaniques Préférées</h2>
+            <div class="bg-white border-neo shadow-neo rounded-3xl p-4 md:p-8 flex flex-col gap-4 tilt-card group">
+                
+                <!-- S Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch group/row hover:-translate-y-1 transition-transform">
+                    <div class="tier-s border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm group-hover/row:scale-105 group-hover/row:rotate-3 transition-transform">S</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-6 py-3 flex items-center gap-3 shadow-neo-sm transform hover:-translate-y-1 transition-transform cursor-default">
+                            <span class="text-2xl">😂</span> <span class="font-bold text-lg">Détente & Rire</span> <span class="bg-neo-dark text-white px-2 py-1 rounded font-display text-sm ml-2">8/9</span>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-slate-500 mb-6 text-sm">Les mécaniques les plus amusantes selon vous.</p>
-                <div class="relative h-64">
-                    <canvas id="mechanicsChart"></canvas>
+
+                <!-- A Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch group/row hover:-translate-y-1 transition-transform">
+                    <div class="tier-a border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm group-hover/row:scale-105 group-hover/row:-rotate-3 transition-transform">A</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-6 py-3 flex items-center gap-3 shadow-neo-sm transform hover:-translate-y-1 transition-transform cursor-default">
+                            <span class="text-2xl">🤝</span> <span class="font-bold text-lg">Collaboration</span> <span class="bg-neo-dark text-white px-2 py-1 rounded font-display text-sm ml-2">6/9</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-6 py-3 flex items-center gap-3 shadow-neo-sm transform hover:-translate-y-1 transition-transform cursor-default">
+                            <span class="text-2xl">🎭</span> <span class="font-bold text-lg">Immersion</span> <span class="bg-neo-dark text-white px-2 py-1 rounded font-display text-sm ml-2">6/9</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="mt-4 bg-purple-50 p-4 rounded-xl text-sm text-purple-800 border border-purple-100">
-                    <strong>🎯 En tête :</strong> Le <strong>bluff/rôles cachés</strong> et l'<strong>association d'idées</strong> dominent à égalité avec 6 votes sur 9 ! La négociation suit de près (4/9).
+
+                <!-- B Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch group/row hover:-translate-y-1 transition-transform">
+                    <div class="tier-b border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm group-hover/row:scale-105 group-hover/row:rotate-2 transition-transform">B</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 shadow-neo-sm cursor-default">
+                            <span class="text-xl">🏆</span> <span class="font-bold">Compétition</span> <span class="bg-slate-200 text-neo-dark px-2 py-1 rounded font-display text-xs">4/9</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 shadow-neo-sm cursor-default">
+                            <span class="text-xl">🌱</span> <span class="font-bold">Utilité (Sens)</span> <span class="bg-slate-200 text-neo-dark px-2 py-1 rounded font-display text-xs">4/9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- C Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch group/row hover:-translate-y-1 transition-transform">
+                    <div class="tier-c border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm group-hover/row:scale-105 group-hover/row:-rotate-2 transition-transform">C</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 cursor-default">
+                            <span class="text-lg">🧠</span> <span class="font-bold text-sm">Réflexion</span> <span class="bg-slate-200 text-neo-dark px-2 py-0.5 rounded font-display text-xs">2</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 cursor-default">
+                            <span class="text-lg">⚡</span> <span class="font-bold text-sm">Action</span> <span class="bg-slate-200 text-neo-dark px-2 py-0.5 rounded font-display text-xs">2</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 opacity-60 cursor-default">
+                            <span class="text-lg">🎁</span> <span class="font-bold text-sm">Récompense</span> <span class="bg-slate-200 text-neo-dark px-2 py-0.5 rounded font-display text-xs">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Insight Post-it -->
+            <div class="mt-8 flex justify-end">
+                <div class="bg-yellow-200 border-neo shadow-neo p-6 rounded-br-3xl w-full md:w-2/3 lg:w-1/2 relative transform rotate-2 hover:rotate-0 transition-transform">
+                    <div class="tape"></div>
+                    <h4 class="font-display text-xl font-bold mb-2 uppercase flex items-center gap-2"><i class="fas fa-pen text-neo-blue"></i> Note de l'équipe</h4>
+                    <p class="font-hand text-2xl leading-tight text-slate-800">La gagne passe au second plan ! On veut décompresser ensemble et se raconter des histoires (Immersion + Collab). Les cadeaux à la fin, on s'en fiche un peu 🤷‍♀️</p>
                 </div>
             </div>
         </section>
 
-        <!-- Section 2: Formats & Thématiques -->
-        <section class="grid md:grid-cols-3 gap-8">
-            <!-- Formats -->
-            <div class="glass-card rounded-3xl p-6 col-span-1 md:col-span-1">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg"><i class="fas fa-box-open"></i></div>
-                    <h2 class="text-xl font-bold text-slate-800">Formats de Jeu</h2>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Challenge Multi-activités</span><span>6/9</span></div>
-                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-500 h-2.5 rounded-full" style="width: 67%"></div></div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Escape Game / Enquête</span><span>5/9</span></div>
-                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-500 h-2.5 rounded-full" style="width: 56%"></div></div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Plateau / Stratégie</span><span>4/9</span></div>
-                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-400 h-2.5 rounded-full" style="width: 44%"></div></div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Construction (Maker)</span><span>4/9</span></div>
-                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-400 h-2.5 rounded-full" style="width: 44%"></div></div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold text-slate-600">Phygital</span><span class="text-slate-600">2/9</span></div>
-                        <div class="w-full bg-slate-200 rounded-full h-2.5"><div class="bg-amber-300 h-2.5 rounded-full" style="width: 22%"></div></div>
-                    </div>
-                </div>
-
-                <div class="mt-8 border-t border-slate-100 pt-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm"><i class="fas fa-hourglass-half"></i></div>
-                        <h3 class="font-bold text-slate-800">Durée idéale</h3>
-                    </div>
-                    <ul class="space-y-2 text-sm">
-                        <li class="flex items-center gap-2"><i class="fas fa-circle text-red-500 text-xs"></i> Court (45m - 1h) : <strong>4 votes</strong></li>
-                        <li class="flex items-center gap-2"><i class="fas fa-circle text-orange-500 text-xs"></i> Classique (1h15 - 1h30) : <strong>3 votes</strong></li>
-                        <li class="flex items-center gap-2"><i class="fas fa-circle text-green-600 text-xs"></i> Temps fort long (2h+) : <strong>1 vote</strong></li>
-                        <li class="flex items-start gap-2"><i class="fas fa-circle text-purple-600 text-xs mt-1"></i> <span class="leading-tight">Dépend du jeu : <strong>1 vote</strong></span></li>
-                    </ul>
-                </div>
-                
-                <div class="mt-6 bg-amber-50 p-4 rounded-xl text-sm text-amber-800 border border-amber-100">
-                    <strong>💡 Insight :</strong> Le format favori est le <strong>Challenge Multi-activités</strong> (6/9), idéalement sur une durée <strong>courte de 45m à 1h</strong> (4/9).
-                </div>
-            </div>
-
-            <!-- RSE Themes -->
-            <div class="glass-card rounded-3xl p-6 col-span-1 md:col-span-2">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-full bg-weevup-light/30 text-weevup-dark flex items-center justify-center text-lg"><i class="fas fa-leaf"></i></div>
-                    <h2 class="text-2xl font-bold text-slate-800">Thématiques RSE Prioritaires</h2>
-                </div>
-                <p class="text-slate-500 mb-6 text-sm">Les sujets que l'équipe souhaite aborder en priorité (Top 3 demandé).</p>
-                
-                <div class="grid sm:grid-cols-2 gap-4">
-                    <!-- Top 1 -->
-                    <div class="bg-gradient-to-r from-weevup to-teal-500 p-4 rounded-2xl text-white shadow-md flex items-center gap-4">
-                        <div class="text-3xl font-bold">1</div>
-                        <div>
-                            <h3 class="font-bold">Engagement Solidaire</h3>
-                            <p class="text-xs opacity-90">Impact local & associations (6 votes)</p>
-                        </div>
-                    </div>
-                    <!-- Top 2 ex aequo -->
-                    <div class="bg-white border-2 border-weevup-light p-4 rounded-2xl text-slate-700 flex items-center gap-4">
-                        <div class="text-2xl font-bold text-weevup">2</div>
-                        <div>
-                            <h3 class="font-bold">Économie Circulaire</h3>
-                            <p class="text-xs text-slate-500">Zéro déchet, anti-gaspi (5 votes)</p>
-                        </div>
-                    </div>
-                    <div class="bg-white border-2 border-weevup-light p-4 rounded-2xl text-slate-700 flex items-center gap-4">
-                        <div class="text-2xl font-bold text-weevup">2</div>
-                        <div>
-                            <h3 class="font-bold">Diversité & Inclusion</h3>
-                            <p class="text-xs text-slate-500">Handicap (5 votes)</p>
-                        </div>
-                    </div>
-                    <!-- Mentions honorables -->
-                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-600 flex items-center gap-4">
-                        <div class="text-xl font-bold text-slate-400"><i class="fas fa-medal"></i></div>
-                        <div>
-                            <h3 class="font-bold">Climat & Éthique</h3>
-                            <p class="text-xs text-slate-500">Mentions honorables (4 votes chacun)</p>
-                        </div>
-                    </div>
-                    <!-- Qualité de Vie -->
-                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-600 flex items-center gap-4">
-                        <div class="text-xl font-bold text-slate-400"><i class="fas fa-spa"></i></div>
-                        <div>
-                            <h3 class="font-bold">Qualité de Vie (QVCT)</h3>
-                            <p class="text-xs text-slate-500">3 votes</p>
-                        </div>
-                    </div>
-                    <!-- Numérique responsable -->
-                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-600 flex items-center gap-4">
-                        <div class="text-xl font-bold text-slate-400"><i class="fas fa-laptop"></i></div>
-                        <div>
-                            <h3 class="font-bold">Numérique responsable</h3>
-                            <p class="text-xs text-slate-500">1 vote</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Storytelling -->
-                <div class="mt-8 border-t border-slate-100 pt-6 grid sm:grid-cols-2 gap-6">
-                    <div>
-                        <h3 class="font-bold text-slate-800 mb-3"><i class="fas fa-book-open text-indigo-500 mr-2"></i> Univers souhaité</h3>
-                        <div class="space-y-2 text-sm">
-                            
-                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
-                                <span>🚀 Science-Fiction</span><span class="font-bold">5</span>
-                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
-                                    Conquérir une nouvelle planète et devoir inventer de toutes pièces un nouveau modèle de société.
-                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
-                                <span>🚨 Thriller / Urgence</span><span class="font-bold">4</span>
-                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
-                                    Un lanceur d'alerte a hacké le système, c'est une course contre la montre pour éviter un scandale.
-                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                </div>
-                            </div>
-
-                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
-                                <span>🕵️ Enquête Policière</span><span class="font-bold">4</span>
-                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
-                                    Façon Cluedo ou "Murder Party", trouver le coupable au sein de l'entreprise.
-                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                </div>
-                            </div>
-
-                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
-                                <span>🌱 Utopie / Solarpunk</span><span class="font-bold">3</span>
-                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
-                                    Nous sommes en 2050, le monde va bien, on construit une ville idéale.
-                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                </div>
-                            </div>
-
-                            <div class="group relative flex justify-between items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 p-2 rounded cursor-help transition-colors" tabindex="0">
-                                <span>🦹 Incarner les "Méchants"</span><span class="font-bold">3</span>
-                                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-50 text-center shadow-xl pointer-events-none">
-                                    Jouer la pire entreprise du monde (pollueurs) pour comprendre les enjeux par l'absurde.
-                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-800 mb-3"><i class="fas fa-masks-theater text-pink-500 mr-2"></i> Le ton idéal</h3>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Léger & Autodérision (3)</span>
-                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">Sérieux / Instructif (2)</span>
-                            <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">Mystérieux / Suspense (2)</span>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Inspirant / Positif (2)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-8 bg-teal-50 p-4 rounded-xl text-sm text-teal-800 border border-teal-100">
-                    <strong>💡 Insight :</strong> L'équipe veut s'investir dans l'<strong>Engagement Solidaire</strong> (6/9), le tout plongé dans un univers de <strong>Science-Fiction</strong> (5/9) traité avec <strong>légèreté et autodérision</strong> (3/9).
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 3: Boîte à idées (Verbatims) -->
+        <!-- Section 2: Mécaniques (Arcade Power Bars) -->
         <section>
-            <h2 class="text-3xl font-bold text-center text-slate-800 mb-8 mt-4"><i class="fas fa-lightbulb text-yellow-400 mr-3"></i>La Boîte à Idées Weevup</h2>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="mb-12 flex flex-col md:flex-row items-center gap-6 reveal">
+                <div class="w-16 h-16 bg-neo-pink border-neo shadow-neo flex items-center justify-center text-3xl -rotate-12 shrink-0 text-white"><i class="fas fa-bolt"></i></div>
+                <div>
+                    <h2 class="font-display text-5xl font-black uppercase">Jauges de Gameplay</h2>
+                    <p class="font-sans font-semibold text-slate-600 text-lg mt-2">Quelles actions nous amusent le plus ? (Points d'énergie sur 9)</p>
+                </div>
+            </div>
+
+            <div class="bg-white border-neo shadow-neo rounded-3xl p-6 md:p-10 space-y-8 tilt-card">
                 
-                <!-- Card 1 -->
-                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-indigo-500 relative">
-                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
-                    <h3 class="font-bold text-indigo-600 mb-2">Un "Monopoly" de l'environnement</h3>
-                    <p class="text-sm text-slate-600 italic">"Pour gagner des terrains il faut faire des bonnes actions. Dans ce jeu, on parlerait pas en argent mais en points RSE. Plus tu fais de bonnes actions, plus tu as de points..."</p>
-                    <div class="mt-4 text-xs font-semibold text-slate-400">— Alice</div>
+                <!-- Bar 1 -->
+                <div class="reveal group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-display text-xl font-bold uppercase transition-transform group-hover:translate-x-2">Bluff & Rôles cachés</span>
+                        <span class="font-hand text-2xl font-bold text-neo-pink">6 votes</span>
+                    </div>
+                    <div class="flex gap-1.5 h-10">
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 100ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 200ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 300ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 400ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 500ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 600ms;"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                    </div>
                 </div>
 
-                <!-- Card 2 -->
-                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-pink-500 relative">
-                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
-                    <h3 class="font-bold text-pink-600 mb-2">Inspiré du Loup-Garou</h3>
-                    <p class="text-sm text-slate-600 italic">"Chaque personnage a un rôle secret (donc une carte secrète) avec un pouvoir unique - cela permet d'inclure tout le monde et chacun se sent impliqué dans le groupe."</p>
-                    <div class="mt-4 text-xs font-semibold text-slate-400">— Juliya & Marilou</div>
+                <!-- Bar 2 -->
+                <div class="reveal group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-display text-xl font-bold uppercase transition-transform group-hover:translate-x-2">Association d'idées</span>
+                        <span class="font-hand text-2xl font-bold text-neo-pink">6 votes</span>
+                    </div>
+                    <div class="flex gap-1.5 h-10">
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 150ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 250ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 350ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 450ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 550ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 650ms;"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                    </div>
                 </div>
 
-                <!-- Card 3 -->
-                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-weevup relative">
-                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
-                    <h3 class="font-bold text-weevup-dark mb-2">Impact réel (Maker)</h3>
-                    <p class="text-sm text-slate-600 italic">"L'objectif serait d'aider les personnes dans le besoin... par exemple construire des lampes envoyées aux enfants qui vivent sans électricité pour les aider dans leur éducation et santé."</p>
-                    <div class="mt-4 text-xs font-semibold text-slate-400">— Juliya</div>
+                <!-- Bar 3 -->
+                <div class="reveal group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-display text-xl font-bold uppercase transition-transform group-hover:translate-x-2">Gestion & Négociation</span>
+                        <span class="font-hand text-2xl font-bold text-neo-blue">4 votes</span>
+                    </div>
+                    <div class="flex gap-1.5 h-8">
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 200ms;"></div>
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 300ms;"></div>
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 400ms;"></div>
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 500ms;"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                    </div>
                 </div>
 
-                <!-- Card 4 -->
-                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-amber-500 relative">
-                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
-                    <h3 class="font-bold text-amber-600 mb-2">Escape Game & Comédiens</h3>
-                    <p class="text-sm text-slate-600 italic">"Un escape game géant pour sauver la planète en s'amusant. / Faire venir des comédiens dans un lieu insolite pour animer le TB."</p>
-                    <div class="mt-4 text-xs font-semibold text-slate-400">— Marie & Justine</div>
+                <!-- Bar 4 & 5 (Smaller) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 reveal">
+                    <div class="group cursor-default">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-display text-sm font-bold uppercase text-slate-500 transition-transform group-hover:translate-x-1">Coopération asymétrique</span>
+                            <span class="font-hand text-xl font-bold text-neo-green">3 votes</span>
+                        </div>
+                        <div class="flex gap-1 h-6">
+                            <div class="flex-1 bg-neo-green border-neo border-2 energy-block" style="transition-delay: 300ms;"></div>
+                            <div class="flex-1 bg-neo-green border-neo border-2 energy-block" style="transition-delay: 400ms;"></div>
+                            <div class="flex-1 bg-neo-green border-neo border-2 energy-block" style="transition-delay: 500ms;"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                        </div>
+                    </div>
+                    <div class="group cursor-default">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-display text-sm font-bold uppercase text-slate-400 transition-transform group-hover:translate-x-1">Hasard & Risque</span>
+                            <span class="font-hand text-xl font-bold text-slate-400">1 vote</span>
+                        </div>
+                        <div class="flex gap-1 h-6 opacity-60">
+                            <div class="flex-1 bg-slate-400 border-neo border-2 energy-block" style="transition-delay: 400ms;"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Card 5 -->
-                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-blue-500 relative">
-                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
-                    <h3 class="font-bold text-blue-600 mb-2">Mécaniques de jeux modernes</h3>
-                    <p class="text-sm text-slate-600 italic">"Times Up, faire deviner des mots et/ou phrases... / J'adore les jeux Skull King, Splendor, Rebelles Princesses, The Game, Lost Cities..."</p>
-                    <div class="mt-4 text-xs font-semibold text-slate-400">— Justine & Camille</div>
-                </div>
-
-                 <!-- Card 6 -->
-                 <div class="glass-card rounded-2xl p-6 border-t-4 border-t-red-500 relative bg-slate-50">
-                    <i class="fas fa-quote-right absolute top-4 right-4 text-slate-100 text-4xl -z-10"></i>
-                    <h3 class="font-bold text-red-600 mb-2">L'idée choc</h3>
-                    <p class="text-sm text-slate-600 italic">"Dans tous nos team buildings, faire un jeu ice-breaker obligatoire de sensibilisation choc et réaliste."</p>
-                    <div class="mt-4 text-xs font-semibold text-slate-400">— Alice</div>
-                </div>
-
             </div>
         </section>
 
-        <!-- Section 3.5: Le Portrait-Robot du Jeu Parfait -->
-        <section class="bg-gradient-to-r from-weevup-dark via-weevup to-teal-500 rounded-[2rem] p-6 md:p-10 text-white shadow-xl relative overflow-hidden mt-4">
-            <div class="absolute top-0 right-0 opacity-10 text-9xl transform translate-x-8 -translate-y-8"><i class="fas fa-trophy"></i></div>
-            <div class="relative z-10">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-white/20 flex shrink-0 items-center justify-center text-2xl backdrop-blur-sm"><i class="fas fa-star text-yellow-300"></i></div>
-                    <h2 class="text-2xl md:text-4xl font-bold">Le Portrait-Robot du Jeu Parfait</h2>
-                </div>
-                <p class="mb-8 opacity-90 text-base md:text-lg">En combinant toutes les premières places de vos votes, voici la recette de notre futur best-seller :</p>
+        <!-- Section 3: Format, Durée, Thèmes -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 reveal">
+            
+            <!-- Left: Settings -->
+            <div class="space-y-8">
+                <!-- Formats -->
+                <div class="bg-neo-blue border-neo shadow-neo rounded-3xl p-6 md:p-8 transform -rotate-1 relative pt-10">
+                    <div class="tape" title="Ne pas décoller !"></div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
-                        <i class="fas fa-face-laugh-squint text-2xl mb-2 text-yellow-300"></i>
-                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Objectif</div>
-                        <div class="font-bold text-sm">Détente & Rire</div>
+                    <h2 class="font-display text-4xl font-black uppercase mb-8 text-white drop-shadow-[3px_3px_0_#0f172a] mt-2 relative z-10 transform -rotate-2">La Forme Idéale</h2>
+                    
+                    <div class="space-y-4 cursor-default relative z-10">
+                        <!-- Format Cards - Gagnant -->
+                        <div class="bg-neo-yellow border-neo rounded-xl p-3 flex justify-between items-center shadow-[4px_4px_0_#0f172a] transform hover:translate-x-2 transition-transform">
+                            <span class="font-bold text-lg flex items-center gap-3 text-neo-dark">
+                                <div class="w-6 h-6 bg-neo-dark rounded flex items-center justify-center text-white text-xs"><i class="fas fa-check"></i></div> 
+                                Challenge (Multi)
+                            </span>
+                            <span class="bg-neo-dark text-white px-3 py-1 font-display font-bold rounded text-sm shrink-0 shadow-inner">6 votes</span>
+                        </div>
+                        
+                        <!-- Format Cards - Second -->
+                        <div class="bg-white border-neo rounded-xl p-3 flex justify-between items-center shadow-[4px_4px_0_#0f172a] transform hover:translate-x-2 transition-transform">
+                            <span class="font-bold text-lg flex items-center gap-3 text-slate-700">
+                                <div class="w-6 h-6 bg-slate-300 rounded flex items-center justify-center text-white text-xs"><i class="fas fa-check"></i></div> 
+                                Escape Game
+                            </span>
+                            <span class="bg-neo-dark text-white px-3 py-1 font-display font-bold rounded text-sm shrink-0">5 votes</span>
+                        </div>
+
+                        <!-- Tickets -->
+                        <div class="flex gap-2 md:gap-3 mt-6">
+                            <div class="bg-white/90 border-neo border-2 border-dashed rounded-xl p-2 flex-1 text-center hover:bg-white transition-colors">
+                                <div class="font-bold text-sm mt-1 text-neo-dark">Plateau</div><div class="font-hand text-xl text-neo-blue">4 votes</div>
+                            </div>
+                            <div class="bg-white/90 border-neo border-2 border-dashed rounded-xl p-2 flex-1 text-center hover:bg-white transition-colors">
+                                <div class="font-bold text-sm mt-1 text-neo-dark">Maker</div><div class="font-hand text-xl text-neo-pink">4 votes</div>
+                            </div>
+                            <div class="bg-white/60 border-neo border-2 border-dashed rounded-xl p-2 flex-1 text-center opacity-80">
+                                <div class="font-bold text-xs mt-1 text-slate-500">Phygital</div><div class="font-hand text-xl text-slate-400">2 votes</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
-                        <i class="fas fa-masks-theater text-2xl mb-2 text-purple-300"></i>
-                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Mécanique</div>
-                        <div class="font-bold text-sm leading-tight">Bluff & Rôles cachés</div>
+                </div>
+
+                <!-- Durée -->
+                <div class="bg-white border-neo shadow-[8px_8px_0_#fb923c] rounded-3xl p-6 md:p-8 transform rotate-1 relative mt-8">
+                    <h3 class="font-display text-3xl font-black uppercase mb-6"><i class="fas fa-stopwatch text-neo-orange"></i> Time Limit</h3>
+                    
+                    <div class="flex flex-col gap-4 cursor-default">
+                        <!-- Vainqueur -->
+                        <div class="bg-neo-dark text-white border-neo p-4 relative transform -rotate-1 hover:rotate-0 transition-transform">
+                            <div class="absolute -top-3 -right-3 bg-neo-yellow text-neo-dark border-neo px-3 py-1 font-display font-bold text-sm transform rotate-6 shadow-neo-sm">VAINQUEUR</div>
+                            <div class="text-neo-green font-display text-5xl md:text-6xl font-black tracking-tighter">45<span class="text-3xl">M</span> - 1<span class="text-3xl">H</span></div>
+                            <div class="font-hand text-2xl text-slate-300 mt-2">4 votes pour ce format court !</div>
+                        </div>
+
+                        <!-- Classique -->
+                        <div class="bg-slate-50 border-neo p-3 flex justify-between items-center transform rotate-1 shadow-neo-sm hover:translate-x-1 transition-transform">
+                            <span class="font-display font-bold text-lg text-slate-700">1H15 - 1H30</span>
+                            <span class="font-hand text-2xl font-bold text-slate-500">3 votes</span>
+                        </div>
+
+                        <!-- Les oubliés -->
+                        <div class="flex gap-2 md:gap-3 opacity-70 mt-2">
+                            <div class="flex-1 border-neo border-2 border-dashed p-2 text-center rounded bg-slate-50">
+                                <div class="font-bold text-[10px] uppercase mb-1 text-neo-dark">2H+</div>
+                                <div class="font-display font-bold text-lg text-neo-dark">1</div>
+                            </div>
+                            <div class="flex-1 border-neo border-2 border-dashed p-2 text-center rounded bg-slate-50">
+                                <div class="font-bold text-[10px] uppercase mb-1 text-neo-dark">Variable</div>
+                                <div class="font-display font-bold text-lg text-neo-dark">1</div>
+                            </div>
+                            <div class="flex-1 border-neo border-2 border-dashed p-2 text-center rounded bg-red-50 text-red-500 opacity-60">
+                                <div class="font-bold text-[10px] uppercase mb-1 line-through">20min</div>
+                                <div class="font-display font-bold text-lg">0</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
-                        <i class="fas fa-stopwatch text-2xl mb-2 text-amber-300"></i>
-                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Format</div>
-                        <div class="font-bold text-sm leading-tight">Challenge multi-activités (45m-1h)</div>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
-                        <i class="fas fa-hand-holding-heart text-2xl mb-2 text-red-300"></i>
-                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Thématique</div>
-                        <div class="font-bold text-sm leading-tight">Engagement Solidaire</div>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
-                        <i class="fas fa-rocket text-2xl mb-2 text-blue-300"></i>
-                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Univers</div>
-                        <div class="font-bold text-sm leading-tight">Science-Fiction</div>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg">
-                        <i class="fas fa-feather text-2xl mb-2 text-green-300"></i>
-                        <div class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Le Ton</div>
-                        <div class="font-bold text-sm leading-tight">Léger & Autodérision</div>
+                </div>
+            </div>
+
+            <!-- Right: Quest Log (Themes) - Design Épuré V10 -->
+            <div class="bg-neo-bg border-neo shadow-neo rounded-3xl p-6 md:p-8 relative">
+                <!-- Holes for notebook -->
+                <div class="absolute top-0 left-6 w-4 h-full flex flex-col justify-evenly py-8">
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                </div>
+
+                <div class="pl-4 md:pl-10">
+                    <h2 class="font-hand text-5xl font-bold mb-8 leading-tight text-neo-dark">
+                        Journal de Quêtes<br>(RSE)
+                    </h2>
+                    
+                    <!-- Themes List avec DIVs propres -->
+                    <div class="font-hand text-3xl space-y-6 mb-8 flex flex-col">
+                        <div class="flex items-center justify-between gap-4 group cursor-default transition-transform hover:translate-x-2">
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 h-8 rounded bg-neo-green text-white flex items-center justify-center text-lg mt-1 shrink-0 shadow-neo-sm"><i class="fas fa-check"></i></div>
+                                <strong class="font-display text-2xl uppercase tracking-wide text-neo-dark group-hover:text-neo-green transition-colors">1. Engagement<br>Solidaire</strong>
+                            </div>
+                            <span class="text-slate-600 font-hand text-xl bg-white border-2 border-neo rounded-full px-4 py-1 shadow-[2px_2px_0_#0f172a] whitespace-nowrap shrink-0 group-hover:bg-neo-green group-hover:text-white transition-colors">6 votes</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between gap-4 group cursor-default transition-transform hover:translate-x-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-neo-yellow text-white flex items-center justify-center text-lg shrink-0 shadow-neo-sm"><i class="fas fa-check"></i></div>
+                                <strong class="font-display text-xl uppercase tracking-wide text-neo-dark group-hover:text-neo-yellow transition-colors">2. Éco. Circulaire</strong>
+                            </div>
+                            <span class="text-slate-600 font-hand text-xl bg-white border-2 border-neo rounded-full px-4 py-1 shadow-[2px_2px_0_#0f172a] whitespace-nowrap shrink-0 group-hover:bg-neo-yellow transition-colors">5 votes</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between gap-4 group cursor-default transition-transform hover:translate-x-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-neo-yellow text-white flex items-center justify-center text-lg shrink-0 shadow-neo-sm"><i class="fas fa-check"></i></div>
+                                <strong class="font-display text-xl uppercase tracking-wide text-neo-dark group-hover:text-neo-yellow transition-colors">2. Diversité / Inclusion</strong>
+                            </div>
+                            <span class="text-slate-600 font-hand text-xl bg-white border-2 border-neo rounded-full px-4 py-1 shadow-[2px_2px_0_#0f172a] whitespace-nowrap shrink-0 group-hover:bg-neo-yellow transition-colors">5 votes</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between gap-4 opacity-50 group cursor-default transition-transform hover:translate-x-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-slate-300 text-transparent flex items-center justify-center text-lg shrink-0 group-hover:bg-slate-400 transition-colors"><i class="fas fa-check"></i></div>
+                                <span class="text-2xl text-slate-600 font-hand group-hover:text-neo-dark transition-colors">Climat & Énergie</span>
+                            </div>
+                            <span class="text-slate-400 font-hand text-base border border-slate-300 rounded-full px-3 py-0.5 whitespace-nowrap shrink-0 group-hover:border-slate-500 transition-colors">(4 votes)</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between gap-4 opacity-50 group cursor-default transition-transform hover:translate-x-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-slate-300 text-transparent flex items-center justify-center text-lg shrink-0 group-hover:bg-slate-400 transition-colors"><i class="fas fa-check"></i></div>
+                                <span class="text-2xl text-slate-600 font-hand group-hover:text-neo-dark transition-colors">Éthique</span>
+                            </div>
+                            <span class="text-slate-400 font-hand text-base border border-slate-300 rounded-full px-3 py-0.5 whitespace-nowrap shrink-0 group-hover:border-slate-500 transition-colors">(4 votes)</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between gap-4 opacity-40 group cursor-default transition-transform hover:translate-x-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-slate-300 text-transparent flex items-center justify-center text-lg shrink-0 group-hover:bg-slate-400 transition-colors"><i class="fas fa-check"></i></div>
+                                <span class="text-xl text-slate-500 font-hand group-hover:text-neo-dark transition-colors">QVCT (3) / Numérique (1)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 4: IA Brainstorming (Gemini API) -->
-        <section class="glass-card rounded-3xl p-6 md:p-8 border-t-4 border-t-weevup">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-weevup-light/30 text-weevup-dark flex shrink-0 items-center justify-center text-lg"><i class="fas fa-robot"></i></div>
-                <h2 class="text-2xl font-bold text-slate-800">Brainstorming interactif IA</h2>
-            </div>
-            <p class="text-slate-500 mb-6 text-sm">Cliquez sur les paramètres ci-dessous pour les modifier, ajoutez vos instructions (optionnel), et laissez l'IA créer le concept parfait !</p>
-            
-            <!-- Grille interactive des paramètres -->
-            <div id="aiParamGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-                <!-- Rempli par JavaScript -->
+        <!-- Section Nouvelle : Direction Artistique & Ton (Conservée) -->
+        <section class="reveal relative z-20">
+            <div class="mb-12 flex flex-col md:flex-row items-center gap-6">
+                <div class="w-16 h-16 bg-neo-purple border-neo shadow-neo flex items-center justify-center text-3xl rotate-6 shrink-0 text-white"><i class="fas fa-image"></i></div>
+                <div>
+                    <h2 class="font-display text-5xl font-black uppercase">Direction Artistique</h2>
+                    <p class="font-sans font-semibold text-slate-600 text-lg mt-2">L'univers visuel et le ton de notre future aventure.</p>
+                </div>
             </div>
 
-            <!-- Instructions supplémentaires -->
-            <div class="mb-6">
-                <label for="aiExtraInstructions" class="block text-sm font-bold text-slate-700 mb-2"><i class="fas fa-comment-dots text-weevup mr-2"></i>Instructions supplémentaires (Optionnel)</label>
-                <textarea id="aiExtraInstructions" rows="2" class="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-weevup focus:border-transparent text-sm" placeholder="Ex: Ajoute un twist où les équipes doivent construire un objet physique, fais en sorte que ça se joue en extérieur..."></textarea>
-            </div>
-            
-            <div class="flex flex-wrap gap-4">
-                <button id="btnGenerateAI" class="bg-gradient-to-r from-weevup-dark to-weevup hover:from-weevup hover:to-weevup-light text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2">
-                    <i class="fas fa-magic"></i> Générer un concept
-                </button>
-                <button id="btnExportPDF" class="hidden bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all flex items-center gap-2">
-                    <i class="fas fa-file-pdf text-red-400"></i> Exporter en PDF
-                </button>
-            </div>
-            
-            <div id="aiResultContainer" class="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200 hidden">
-                <div id="aiLoading" class="hidden flex flex-col items-center justify-center py-4">
-                    <i class="fas fa-circle-notch fa-spin text-3xl text-weevup mb-2"></i>
-                    <p class="text-sm text-slate-500 animate-pulse">L'IA réfléchit au concept parfait...</p>
+            <div class="flex flex-col xl:flex-row gap-8">
+                <!-- MOODBOARD (Univers) -->
+                <div class="w-full xl:w-2/3 bg-neo-purple border-neo shadow-neo rounded-[2rem] p-6 md:p-10 relative overflow-hidden tilt-card" style="transform-origin: center center;">
+                    <!-- Deco -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <h3 class="font-display text-3xl font-black text-white mb-8 relative z-10 drop-shadow-[2px_2px_0_#0f172a]"><i class="fas fa-palette text-neo-yellow"></i> Le Moodboard</h3>
+
+                    <!-- Vainqueur Univers -->
+                    <div class="bg-white border-neo shadow-[8px_8px_0_#fde047] rounded-2xl p-4 flex flex-col md:flex-row gap-6 relative group transform hover:-translate-y-2 transition-transform duration-300">
+                        <div class="absolute -top-6 -left-4 text-6xl animate-bounce z-20 drop-shadow-md">👑</div>
+                        <div class="absolute -top-4 right-4 bg-neo-yellow border-neo shadow-neo-sm px-4 py-1 font-display font-black uppercase text-neo-dark transform rotate-3 z-20">
+                            Vainqueur
+                        </div>
+                        
+                        <!-- Image Container stylisé (Placeholder propre) -->
+                        <div class="w-full md:w-1/2 bg-slate-200 border-4 border-neo rounded-xl overflow-hidden relative min-h-[200px] flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                            <span class="font-sans font-bold text-slate-500 text-xs border-2 border-dashed border-slate-400 p-2 mx-4 rounded bg-white/60 shadow-sm block text-center transform group-hover:scale-105 transition-transform duration-500">
+                                
+                            </span>
+                        </div>
+                        
+                        <!-- Text Content -->
+                        <div class="w-full md:w-1/2 flex flex-col justify-center pt-4 md:pt-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-display font-black text-3xl md:text-4xl text-neo-blue uppercase tracking-tight">Science<br>Fiction</h4>
+                                <span class="bg-neo-dark text-white px-3 py-1 font-display font-bold text-lg rounded border-neo shadow-neo-sm shrink-0">5 votes</span>
+                            </div>
+                            <p class="font-hand text-2xl text-slate-600 mt-2 leading-tight">Nouveau modèle de société sur une exoplanète. On repart de zéro !</p>
+                        </div>
+                    </div>
+
+                    <!-- Challengers -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 relative z-10">
+                        <!-- Thriller -->
+                        <div class="bg-slate-50 border-neo shadow-neo-sm rounded-xl p-3 flex flex-col transform hover:-translate-y-2 transition-transform duration-300 group">
+                            <div class="h-28 bg-slate-200 border-2 border-neo rounded-lg flex items-center justify-center mb-3 overflow-hidden relative group-hover:bg-slate-300 transition-colors p-2">
+                                <span class="font-sans font-bold text-slate-500 text-[10px] border border-dashed border-slate-400 p-1 rounded bg-white/60 shadow-sm block text-center transform group-hover:scale-105 transition-transform duration-500">
+                                    
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h5 class="font-display font-black text-neo-orange leading-none uppercase text-sm">Thriller /<br>Enquête</h5>
+                                <span class="bg-neo-dark text-white text-[10px] px-1.5 py-0.5 rounded font-bold border-neo">4+4 v.</span>
+                            </div>
+                        </div>
+
+                        <!-- Utopie -->
+                        <div class="bg-slate-50 border-neo shadow-neo-sm rounded-xl p-3 flex flex-col transform hover:-translate-y-2 transition-transform duration-300 group opacity-90 hover:opacity-100">
+                            <div class="h-28 bg-slate-200 border-2 border-neo rounded-lg flex items-center justify-center mb-3 overflow-hidden relative group-hover:bg-slate-300 transition-colors p-2">
+                                <span class="font-sans font-bold text-slate-500 text-[10px] border border-dashed border-slate-400 p-1 rounded bg-white/60 shadow-sm block text-center transform group-hover:scale-105 transition-transform duration-500">
+                                    
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h5 class="font-display font-black text-neo-green leading-none uppercase text-sm">Utopie<br>Solarpunk</h5>
+                                <span class="bg-neo-dark text-white text-[10px] px-1.5 py-0.5 rounded font-bold border-neo">3 v.</span>
+                            </div>
+                        </div>
+
+                        <!-- Méchants -->
+                        <div class="bg-slate-50 border-neo shadow-neo-sm rounded-xl p-3 flex flex-col transform hover:-translate-y-2 transition-transform duration-300 group opacity-90 hover:opacity-100">
+                            <div class="h-28 bg-slate-200 border-2 border-neo rounded-lg flex items-center justify-center mb-3 overflow-hidden relative group-hover:bg-slate-300 transition-colors p-2">
+                                <span class="font-sans font-bold text-slate-500 text-[10px] border border-dashed border-slate-400 p-1 rounded bg-white/60 shadow-sm block text-center transform group-hover:scale-105 transition-transform duration-500">
+                                    
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h5 class="font-display font-black text-neo-purple leading-none uppercase text-sm">Jouer les<br>Méchants</h5>
+                                <span class="bg-neo-dark text-white text-[10px] px-1.5 py-0.5 rounded font-bold border-neo">3 v.</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="aiContent" class="text-slate-700 whitespace-pre-wrap leading-relaxed"></div>
-                <div id="aiError" class="hidden text-red-500 text-sm mt-2"></div>
+
+                <!-- LE TON (Equalizer / Soundboard) -->
+                <div class="w-full xl:w-1/3 bg-white border-neo shadow-neo rounded-[2rem] p-6 md:p-8 relative tilt-card" style="transform-origin: center center;">
+                    <div class="tape" title="Ne pas décoller !"></div>
+                    <h3 class="font-display text-3xl font-black text-neo-dark mb-6 mt-2"><i class="fas fa-volume-up text-neo-pink"></i> Réglage du Ton</h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Gagnant -->
+                        <div class="bg-neo-pink border-neo shadow-[4px_4px_0_#0f172a] rounded-xl p-4 transform -rotate-1 hover:rotate-0 transition-transform relative z-10 cursor-default">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-xs uppercase tracking-widest text-pink-200">Choix N°1</span>
+                                <span class="bg-white text-neo-dark font-black px-2 py-1 rounded-md border-neo text-xs shadow-neo-sm">3 votes</span>
+                            </div>
+                            <h4 class="font-display font-black text-2xl text-white uppercase leading-tight">🤪 Léger &<br>Autodérision</h4>
+                        </div>
+
+                        <!-- Les autres tons -->
+                        <div class="bg-slate-50 border-neo border-dashed rounded-xl p-3 flex justify-between items-center hover:bg-slate-100 hover:border-solid transition-all group cursor-default">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl grayscale group-hover:grayscale-0 transition-all">👔</span>
+                                <span class="font-bold text-slate-600 group-hover:text-neo-dark uppercase text-sm">Sérieux</span>
+                            </div>
+                            <span class="font-hand text-xl text-slate-400 group-hover:text-neo-dark">2 votes</span>
+                        </div>
+
+                        <div class="bg-slate-50 border-neo border-dashed rounded-xl p-3 flex justify-between items-center hover:bg-slate-100 hover:border-solid transition-all group cursor-default">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl grayscale group-hover:grayscale-0 transition-all">🕵️</span>
+                                <span class="font-bold text-slate-600 group-hover:text-neo-dark uppercase text-sm">Mystérieux</span>
+                            </div>
+                            <span class="font-hand text-xl text-slate-400 group-hover:text-neo-dark">2 votes</span>
+                        </div>
+
+                        <div class="bg-slate-50 border-neo border-dashed rounded-xl p-3 flex justify-between items-center hover:bg-slate-100 hover:border-solid transition-all group cursor-default">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl grayscale group-hover:grayscale-0 transition-all">✨</span>
+                                <span class="font-bold text-slate-600 group-hover:text-neo-dark uppercase text-sm">Inspirant</span>
+                            </div>
+                            <span class="font-hand text-xl text-slate-400 group-hover:text-neo-dark">2 votes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: La Boîte à Idées (Polaroids Marquee) -->
+        <section class="reveal overflow-hidden py-10 -mx-4 md:-mx-8 bg-neo-dark text-white rounded-3xl border-neo shadow-neo transform rotate-1 relative">
+            <div class="hazard-tape absolute top-0 left-0"></div>
+            <div class="hazard-tape absolute bottom-0 left-0"></div>
+            <!-- Grille de fond ingénieur -->
+            <div class="absolute inset-0 opacity-20 pointer-events-none mt-4" style="background-image: linear-gradient(#4ade80 1px, transparent 1px), linear-gradient(90deg, #4ade80 1px, transparent 1px); background-size: 20px 20px;"></div>
+            
+            <div class="px-8 mb-8 mt-4 relative z-10">
+                <h2 class="font-display text-5xl font-black uppercase">Le Mur des <span class="text-neo-yellow">Idées</span></h2>
+                <p class="font-hand text-3xl mt-2 text-slate-300">Glissez pour voir ce qui est sorti du chapeau !</p>
+            </div>
+            
+            <div id="ideasCarousel" class="w-full overflow-x-auto flex no-scrollbar cursor-grab px-8 pb-12 pt-4 relative z-10">
+                
+                <!-- Rail 1 (Sera cloné parfaitement par le JS) -->
+                <div id="track1" class="flex gap-8 shrink-0 pr-8">
+                    <!-- Polaroids -->
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#fde047] transform -rotate-2 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">🌍</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Monopoly écolo</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Pour gagner des terrains il faut faire des bonnes actions (points RSE)."</p>
+                            <div class="text-sm font-bold uppercase text-neo-blue">— Alice</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#f472b6] transform rotate-3 mt-4 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">🎭</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Le rôle secret</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Chaque personnage a un rôle avec un pouvoir unique, ça inclut tout le monde."</p>
+                            <div class="text-sm font-bold uppercase text-neo-pink">— Juliya & Marilou</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#4ade80] transform -rotate-1 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">💡</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Impact (Maker)</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Construire des lampes envoyées aux enfants sans électricité."</p>
+                            <div class="text-sm font-bold uppercase text-neo-green">— Juliya</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#a78bfa] transform rotate-2 mt-2 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">🏃‍♀️</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Escape Géant</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Sauver la planète en s'amusant. Avec des comédiens dans un lieu insolite."</p>
+                            <div class="text-sm font-bold uppercase text-neo-purple">— Marie & Justine</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#fca5a5] transform -rotate-3 mt-6 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-red-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">⚠️</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2 text-red-600">L'idée choc</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4 text-slate-700">"Faire un jeu ice-breaker obligatoire de sensibilisation choc et réaliste."</p>
+                            <div class="text-sm font-bold uppercase text-red-500">— Alice</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: IA Generator -->
+        <section id="aiSection" class="reveal relative z-50">
+            <div class="border-neo shadow-neo rounded-[2rem] bg-neo-green p-6 md:p-10 relative overflow-visible transform rotate-1">
+                
+                <div class="bg-white border-neo rounded-2xl p-6 md:p-8 relative">
+                    <!-- Robot Spin on hover -->
+                    <div class="absolute -top-6 -right-6 bg-neo-yellow border-neo shadow-neo rounded-full w-16 h-16 flex items-center justify-center text-3xl animate-bounce z-20 cursor-pointer hover:animate-spin-fast">
+                        🤖
+                    </div>
+
+                    <h2 class="font-display text-4xl md:text-5xl font-black uppercase text-neo-dark mb-2">La Machine à Idées</h2>
+                    <p class="font-hand text-2xl text-slate-600 mb-8">Bidouillez les boutons, glissez une consigne et lancez l'IA !</p>
+                    
+                    <!-- Interactive Selectors -->
+                    <div id="aiParamGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 font-sans">
+                        <!-- JS Injected Dropdowns -->
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="bg-neo-bg border-neo rounded-xl p-3 flex flex-col md:flex-row gap-4 shadow-neo-sm relative z-20">
+                        <div class="flex-grow">
+                            <input type="text" id="aiExtraInstructions" class="w-full bg-transparent text-lg font-hand text-neo-dark focus:outline-none placeholder-slate-400 h-full px-2" placeholder="Ajouter une règle folle (ex: Jouable en chaussettes)...">
+                        </div>
+                        <button id="btnGenerateAI" class="btn-brutal bg-neo-dark text-white font-display uppercase font-black py-4 px-8 rounded-lg border-neo shadow-[4px_4px_0_#4ade80] hover:bg-slate-800 flex items-center justify-center gap-2 whitespace-nowrap z-10">
+                            <i class="fas fa-bolt text-neo-yellow"></i> Générer !
+                        </button>
+                        <button id="btnExportPDF" class="btn-brutal hidden bg-neo-yellow text-neo-dark font-display uppercase font-black py-4 px-6 rounded-lg border-neo shadow-[4px_4px_0_#0f172a] hover:bg-yellow-400 flex items-center justify-center gap-2 whitespace-nowrap z-10">
+                            <i class="fas fa-print"></i> PDF
+                        </button>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="aiResultContainer" class="mt-8 hidden">
+                        <div class="border-neo border-4 rounded-xl p-6 md:p-8 relative crt-screen overflow-hidden">
+                            <div class="tape top-0 left-10 rotate-3 bg-neo-green/30 border-neo-green text-neo-green flex items-center justify-center font-display text-[10px] tracking-widest uppercase z-10">CLASSIFIÉ</div>
+                            
+                            <!-- CRT Glitch & Scanline -->
+                            <div class="absolute top-0 left-0 w-full h-2 bg-white/10 animate-[pulse_3s_infinite] blur-sm pointer-events-none z-0"></div>
+                            <div class="scanline z-0"></div>
+                            
+                            <!-- Loading UI (Added Progress Bar) -->
+                            <div id="aiLoading" class="hidden flex-col items-center justify-center py-10 relative z-10">
+                                <div class="text-6xl animate-spin mb-4 text-neo-green"><i class="fas fa-compact-disc"></i></div>
+                                <p class="font-display font-black uppercase tracking-widest animate-pulse text-neo-green text-shadow-sm mb-4">Connexion au serveur...</p>
+                                <div class="w-64 h-4 border-2 border-neo-green rounded p-0.5">
+                                    <div class="bg-neo-green h-full ai-progress-bar"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div id="aiContent" class="text-neo-green text-lg leading-relaxed hidden font-display font-medium relative z-10"></div>
+                            
+                            <!-- Error -->
+                            <div id="aiError" class="hidden text-red-500 font-bold p-4 border-4 border-red-500 rounded flex items-center gap-3 bg-neo-dark relative z-10">
+                                <i class="fas fa-bomb text-2xl"></i> ERROR 404 : Serveur IA hors ligne.
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-16 text-center text-slate-400 text-sm">
-        <p>Infographie interactive générée à partir des réponses du formulaire "Projet Jeu RSE Weevup".</p>
+    <footer class="py-12 text-center text-slate-400 font-display font-bold uppercase tracking-[0.2em] mt-20">
+        <p>WEEVUP GAMING © 2026 — DESIGN LUDIQUE & ROBUSTE</p>
     </footer>
 
     <!-- Scripts -->
     <script>
-        // Configuration globale de Chart.js
-        Chart.defaults.font.family = "'Poppins', sans-serif";
-        Chart.defaults.color = '#64748b';
-
-        // 1. Graphique des Motivations
-        const ctxMotivation = document.getElementById('motivationChart').getContext('2d');
-        new Chart(ctxMotivation, {
-            type: 'bar',
-            data: {
-                labels: ['Détente (Rire)', 'Collaboration', 'Immersion', 'Compétition', 'Utilité (Sens)', 'Réflexion', 'Action/Dynamisme', 'Récompense'],
-                datasets: [{
-                    label: 'Nombre de votes',
-                    data: [8, 6, 6, 4, 4, 2, 2, 1],
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)', // blue
-                        'rgba(59, 130, 246, 0.6)', 
-                        'rgba(59, 130, 246, 0.6)', 
-                        'rgba(148, 163, 184, 0.5)',
-                        'rgba(148, 163, 184, 0.5)',
-                        'rgba(148, 163, 184, 0.5)',
-                        'rgba(148, 163, 184, 0.5)',
-                        'rgba(148, 163, 184, 0.3)'
-                    ],
-                    borderRadius: 6,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        padding: 12,
-                        cornerRadius: 8
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 9,
-                        ticks: { stepSize: 1 },
-                        grid: { display: false }
-                    },
-                    y: {
-                        grid: { borderDash: [4, 4] }
-                    }
-                }
-            }
+        // --- 0. Hero Parallax Effect ---
+        document.addEventListener('mousemove', function(e) {
+            const layers = document.querySelectorAll('.parallax-layer');
+            const x = (window.innerWidth - e.pageX * 2) / 100;
+            const y = (window.innerHeight - e.pageY * 2) / 100;
+            
+            layers.forEach(layer => {
+                const speed = layer.getAttribute('data-speed');
+                layer.style.transform = `translateX(${x * speed}px) translateY(${y * speed}px)`;
+            });
         });
 
-        // 2. Graphique des Mécaniques
-        const ctxMechanics = document.getElementById('mechanicsChart').getContext('2d');
-        new Chart(ctxMechanics, {
-            type: 'bar',
-            data: {
-                labels: ['Bluff / Rôles cachés', "Association d'idées", 'Gestion / Négo', 'Coop. asymétrique', 'Hasard / Risque'],
-                datasets: [{
-                    label: 'Nombre de votes',
-                    data: [6, 6, 4, 3, 1],
-                    backgroundColor: [
-                        'rgba(168, 85, 247, 0.8)', // purple
-                        'rgba(168, 85, 247, 0.8)',
-                        'rgba(148, 163, 184, 0.5)',
-                        'rgba(148, 163, 184, 0.5)',
-                        'rgba(148, 163, 184, 0.3)'
-                    ],
-                    borderRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 9,
-                        ticks: { stepSize: 1 },
-                        grid: { borderDash: [4, 4] }
-                    },
-                    x: {
-                        grid: { display: false }
-                    }
+        // --- 0.5 Press Start Function ---
+        function pressStart() {
+            confetti({ 
+                particleCount: 40, 
+                spread: 60, 
+                origin: { y: 0.9 }, 
+                colors: ['#fde047', '#0f172a', '#4ade80'] 
+            });
+            document.getElementById('tier-list').scrollIntoView({behavior: 'smooth'});
+        }
+
+        // --- 1. Animation Scroll Reveal ---
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
                 }
-            }
+            });
+        }, revealOptions);
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // --- 2. Sticker 100% Approuvé Draggable ---
+        dragElement(document.getElementById("sticker-100"));
+
+        function dragElement(elmnt) {
+          var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+          elmnt.onmousedown = dragMouseDown;
+          
+          function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+            elmnt.classList.add('cursor-grabbing');
+            elmnt.style.zIndex = 1000;
+          }
+          function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+          }
+          function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            elmnt.classList.remove('cursor-grabbing');
+          }
+        }
+
+        // --- 3. Effet 3D Tilt au survol ---
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                card.style.zIndex = 50;
+            });
+            card.addEventListener('mouseleave', () => {
+                const originalTransform = card.classList.contains('rotate-1') ? 'rotate(1deg)' : 
+                                          card.classList.contains('-rotate-1') ? 'rotate(-1deg)' : '';
+                card.style.transform = originalTransform;
+                card.style.zIndex = 1;
+            });
         });
 
-        // 3. IA LLM Feature (Gemini API Integration) avec Paramètres Dynamiques et Export PDF
-        const btnGenerateAI = document.getElementById('btnGenerateAI');
+        // --- 4. Carousel Boîte à Idées ---
+        const slider = document.getElementById('ideasCarousel');
+        const track1 = document.getElementById('track1');
+        
+        const track2 = track1.cloneNode(true);
+        track2.id = "track2";
+        slider.appendChild(track2);
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let autoScrollSpeed = 1;
+        let autoScrollInterval;
+
+        function startAutoScroll() {
+            autoScrollInterval = setInterval(() => {
+                if(!isDown) {
+                    slider.scrollLeft += autoScrollSpeed;
+                    if (slider.scrollLeft >= track1.offsetWidth) {
+                        slider.scrollLeft -= track1.offsetWidth;
+                    } else if (slider.scrollLeft <= 0) {
+                        slider.scrollLeft += track1.offsetWidth;
+                    }
+                }
+            }, 20);
+        }
+        startAutoScroll();
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.classList.add('cursor-grabbing');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('cursor-grabbing'); });
+        slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('cursor-grabbing'); });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+        
+        slider.addEventListener('touchstart', () => { isDown = true; });
+        slider.addEventListener('touchend', () => { isDown = false; });
+
+        // --- 5. Interface IA Interactive ---
+        const aiOptions = {
+            objective: { title: "Objectif", choices: ["Détente & Rire", "Collaboration", "Immersion", "Compétition", "Utilité (Sens)", "Réflexion", "Action & Dynamisme"] },
+            mechanic: { title: "Mécanique", choices: ["Bluff & Rôles cachés", "Association d'idées", "Gestion & Négociation", "Coopération asymétrique", "Hasard & Risque"] },
+            format: { title: "Format", choices: ["Challenge multi-activités", "Escape Game / Enquête", "Plateau / Stratégie", "Construction (Maker)", "Phygital", "Ice-breaker"] },
+            theme: { title: "Thématique", choices: ["Engagement Solidaire", "Économie Circulaire", "Diversité & Inclusion", "Climat & Énergie", "Éthique & Transparence", "Qualité de Vie (QVCT)", "Numérique responsable"] },
+            universe: { title: "Univers", choices: ["Science-Fiction", "Thriller / Urgence", "Enquête Policière", "Utopie / Solarpunk", "Incarner les 'Méchants'"] },
+            tone: { title: "Le Ton", choices: ["Léger & Autodérision", "Sérieux / Instructif", "Mystérieux / Suspense", "Inspirant / Positif"] }
+        };
+
+        const aiState = { objective: 0, mechanic: 0, format: 0, theme: 0, universe: 0, tone: 0 };
         const btnExportPDF = document.getElementById('btnExportPDF');
+        let activeDropdown = null;
+
+        function renderAiDropdowns() {
+            const grid = document.getElementById('aiParamGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(aiOptions).forEach(key => {
+                const opt = aiOptions[key];
+                const currentChoice = opt.choices[aiState[key]];
+                const isEdited = aiState[key] !== 0;
+                
+                let optionsHtml = '';
+                opt.choices.forEach((choice, index) => {
+                    const isSelected = index === aiState[key];
+                    optionsHtml += `
+                        <div class="px-4 py-3 text-sm cursor-pointer hover:bg-slate-100 border-b border-slate-200 last:border-0 flex items-center justify-between ${isSelected ? 'font-bold bg-neo-yellow/20' : ''}" 
+                             onclick="event.stopPropagation(); selectAiOption('${key}', ${index})">
+                            ${choice}
+                            ${isSelected ? '🎯' : ''}
+                        </div>
+                    `;
+                });
+
+                const isOpen = activeDropdown === key;
+                const buttonShadow = isOpen ? 'shadow-none translate-y-[4px]' : 'shadow-[4px_4px_0_#0f172a]';
+                const editedBg = isEdited ? 'bg-neo-yellow/10' : 'bg-white';
+
+                grid.innerHTML += `
+                    <div class="relative w-full" id="dropdown-container-${key}">
+                        <div class="btn-brutal w-full ${editedBg} border-neo p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${buttonShadow}" onclick="toggleDropdown('${key}', event)">
+                            <div class="flex flex-col text-left overflow-hidden">
+                                <span class="font-display text-[10px] font-black uppercase tracking-widest ${isEdited ? 'text-neo-dark' : 'text-slate-400'} mb-1">${opt.title}</span>
+                                <span class="text-sm font-bold text-neo-dark truncate block">${currentChoice}</span>
+                            </div>
+                            <i class="fas fa-caret-down text-lg text-slate-800 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}" id="icon-${key}"></i>
+                        </div>
+                        
+                        <div id="menu-${key}" class="${isOpen ? '' : 'hidden'} absolute top-[calc(100%+8px)] left-0 w-full bg-white border-neo shadow-neo z-50 overflow-hidden py-1 rounded">
+                            <div class="max-h-48 overflow-y-auto no-scrollbar">
+                                ${optionsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.toggleDropdown = function(key, event) {
+            event.stopPropagation();
+            
+            if (activeDropdown === key) {
+                activeDropdown = null;
+            } else {
+                activeDropdown = key;
+            }
+            renderAiDropdowns();
+        };
+
+        window.selectAiOption = function(key, index) {
+            aiState[key] = index;
+            activeDropdown = null;
+            renderAiDropdowns();
+            btnExportPDF.classList.add('hidden');
+        };
+
+        document.addEventListener('click', () => {
+            if (activeDropdown) {
+                document.getElementById(`menu-${activeDropdown}`).classList.add('hidden');
+                document.getElementById(`icon-${activeDropdown}`).classList.remove('rotate-180');
+                activeDropdown = null;
+            }
+        });
+
+        renderAiDropdowns();
+
+        // --- 6. Intégration Gemini API avec Confettis ---
+        const btnGenerateAI = document.getElementById('btnGenerateAI');
         const aiResultContainer = document.getElementById('aiResultContainer');
         const aiLoading = document.getElementById('aiLoading');
         const aiContent = document.getElementById('aiContent');
         const aiError = document.getElementById('aiError');
         const aiExtraInstructions = document.getElementById('aiExtraInstructions');
 
-        // Configuration des options issues de l'enquête
-        const aiOptions = {
-            objective: {
-                title: "Objectif", icon: "fa-face-laugh-squint", color: "text-yellow-500", bgHover: "hover:bg-yellow-50", borderHover: "hover:border-yellow-300",
-                choices: ["Détente & Rire", "Collaboration", "Immersion", "Compétition", "Utilité (Sens)", "Réflexion", "Action & Dynamisme"]
-            },
-            mechanic: {
-                title: "Mécanique", icon: "fa-masks-theater", color: "text-purple-500", bgHover: "hover:bg-purple-50", borderHover: "hover:border-purple-300",
-                choices: ["Bluff & Rôles cachés", "Association d'idées", "Gestion & Négociation", "Coopération asymétrique", "Hasard & Risque"]
-            },
-            format: {
-                title: "Format", icon: "fa-stopwatch", color: "text-amber-500", bgHover: "hover:bg-amber-50", borderHover: "hover:border-amber-300",
-                choices: ["Challenge multi-activités", "Escape Game / Enquête", "Plateau / Stratégie", "Construction (Maker)", "Phygital"]
-            },
-            theme: {
-                title: "Thématique", icon: "fa-hand-holding-heart", color: "text-red-500", bgHover: "hover:bg-red-50", borderHover: "hover:border-red-300",
-                choices: ["Engagement Solidaire", "Économie Circulaire", "Diversité & Inclusion", "Climat & Énergie", "Éthique & Transparence", "Qualité de Vie (QVCT)", "Numérique responsable"]
-            },
-            universe: {
-                title: "Univers", icon: "fa-rocket", color: "text-blue-500", bgHover: "hover:bg-blue-50", borderHover: "hover:border-blue-300",
-                choices: ["Science-Fiction", "Thriller / Urgence", "Enquête Policière", "Utopie / Solarpunk", "Incarner les 'Méchants'"]
-            },
-            tone: {
-                title: "Le Ton", icon: "fa-feather", color: "text-green-500", bgHover: "hover:bg-green-50", borderHover: "hover:border-green-300",
-                choices: ["Léger & Autodérision", "Sérieux / Instructif", "Mystérieux / Suspense", "Inspirant / Positif"]
-            }
-        };
-
-        // État actuel des sélections (index 0 = le choix n°1 de l'équipe)
-        const aiState = { objective: 0, mechanic: 0, format: 0, theme: 0, universe: 0, tone: 0 };
-
-        // Fonction pour dessiner la grille interactive
-        function renderAiGrid() {
-            const grid = document.getElementById('aiParamGrid');
-            grid.innerHTML = '';
-            Object.keys(aiOptions).forEach(key => {
-                const opt = aiOptions[key];
-                const currentChoice = opt.choices[aiState[key]];
-                grid.innerHTML += `
-                    <div class="cursor-pointer bg-white ${opt.bgHover} border border-slate-200 ${opt.borderHover} p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition-all group flex flex-col justify-center items-center" onclick="cycleAiOption('${key}')" title="Cliquez pour changer d'option">
-                        <i class="fas ${opt.icon} text-2xl mb-2 ${opt.color} group-hover:scale-110 transition-transform"></i>
-                        <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-1 flex justify-center items-center gap-1 w-full">
-                            ${opt.title} <i class="fas fa-sync-alt text-[8px] opacity-40 group-hover:rotate-180 transition-transform duration-300"></i>
-                        </div>
-                        <div class="font-bold text-sm text-slate-700 leading-tight select-none">${currentChoice}</div>
-                    </div>
-                `;
-            });
-        }
-
-        // Fonction pour passer au choix suivant au clic
-        window.cycleAiOption = function(key) {
-            aiState[key] = (aiState[key] + 1) % aiOptions[key].choices.length;
-            renderAiGrid();
-            // Cacher le bouton PDF si on modifie les paramètres, ça invite à regénérer
-            btnExportPDF.classList.add('hidden');
-        };
-
-        // Initialisation de la grille
-        renderAiGrid();
-
         async function fetchGeminiResponse(prompt) {
-            const apiKey = ""; // Clé injectée par l'environnement
+            const apiKey = ""; 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }]
-            };
-
-            let retries = 5;
-            let delay = 1000;
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
+            let retries = 5, delay = 1000;
 
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    
                     const data = await response.json();
                     return data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucune réponse générée.";
                 } catch (error) {
@@ -603,13 +1241,81 @@
             }
         }
 
+        async function typeWriterHTML(element, htmlString, speed = 10) {
+            element.innerHTML = '';
+            element.classList.remove('hidden');
+            let i = 0;
+            let isTag = false;
+            let currentHTML = '';
+            
+            return new Promise(resolve => {
+                function type() {
+                    if (i < htmlString.length) {
+                        currentHTML += htmlString.charAt(i);
+                        element.innerHTML = currentHTML + '<span class="inline-block animate-pulse align-middle leading-none ml-1 text-neo-green">█</span>';
+                        
+                        if (htmlString.charAt(i) === '<') isTag = true;
+                        if (htmlString.charAt(i) === '>') isTag = false;
+                        
+                        i++;
+                        setTimeout(type, isTag ? 0 : speed);
+                    } else {
+                        element.innerHTML = currentHTML + '<span class="inline-block animate-pulse align-middle leading-none ml-1 text-neo-green">█</span>';
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+
+        function throwConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+              var timeLeft = animationEnd - Date.now();
+
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              var particleCount = 50 * (timeLeft / duration);
+              confetti({
+                ...defaults, particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+                colors: ['#4ade80', '#fde047', '#f472b6', '#60a5fa']
+              });
+              confetti({
+                ...defaults, particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+                colors: ['#4ade80', '#fde047', '#f472b6', '#60a5fa']
+              });
+            }, 250);
+        }
+
         btnGenerateAI.addEventListener('click', async () => {
             aiResultContainer.classList.remove('hidden');
             btnExportPDF.classList.add('hidden');
             aiLoading.classList.remove('hidden');
+            aiLoading.style.display = 'flex'; 
             aiContent.classList.add('hidden');
             aiError.classList.add('hidden');
             aiContent.innerHTML = '';
+            
+            // Restart progress bar animation
+            const bar = document.querySelector('.ai-progress-bar');
+            bar.style.animation = 'none';
+            bar.offsetHeight; 
+            bar.style.animation = null; 
+
+            const originalBtnHtml = btnGenerateAI.innerHTML;
+            btnGenerateAI.innerHTML = '⚙️ Moulinage...';
+            btnGenerateAI.disabled = true;
             
             const selectedParams = {
                 objectif: aiOptions.objective.choices[aiState.objective],
@@ -621,105 +1327,105 @@
             };
             const extra = aiExtraInstructions.value.trim();
 
-            const promptContext = `Tu es un concepteur expert en jeux de team building RSE. L'équipe 'Weevup' souhaite créer son futur best-seller.
-            Génère UN concept de jeu ultra-original sous forme de 'pitch' (Titre accrocheur, Contexte, But du jeu, Mécanique principale) en utilisant STRICTEMENT ces paramètres :
-            - Objectif principal de l'expérience : ${selectedParams.objectif}
-            - Mécanique clé de gameplay : ${selectedParams.mecanique}
+            const promptContext = `Tu es un concepteur de jeux déjanté et expert en team building. L'équipe 'Weevup' veut créer son jeu.
+            Génère UN concept de jeu sous forme de 'pitch' (Titre accrocheur, Contexte, But du jeu, Mécanique principale) en utilisant STRICTEMENT :
+            - Objectif : ${selectedParams.objectif}
+            - Mécanique : ${selectedParams.mecanique}
             - Format : ${selectedParams.format}
-            - Thématique RSE : ${selectedParams.thematique}
-            - Univers narratif : ${selectedParams.univers}
-            - Ton de l'animation : ${selectedParams.ton}
-            ${extra ? `\nInstructions supplémentaires et spécifiques de l'équipe : "${extra}"` : ''}
+            - Thème : ${selectedParams.thematique}
+            - Univers : ${selectedParams.univers}
+            - Ton : ${selectedParams.ton}
+            ${extra ? `\nConsigne bonus (très important) : "${extra}"` : ''}
             
-            Rédige en français, de façon très structurée (avec des puces et des titres en gras) en environ 3 ou 4 paragraphes dynamiques et inspirants pour donner envie à l'équipe.`;
+            Rédige en français, avec des puces et des titres en gras, 3 paragraphes dynamiques. Pas de formatage complexe (*), juste des **gras** et des sauts de ligne.`;
             
             try {
                 const text = await fetchGeminiResponse(promptContext);
                 
-                // Nettoyage Markdown -> HTML basique
-                const formattedText = text
-                    .replace(/### (.*?)\n/g, '<h3 class="text-xl font-bold mt-4 mb-2 text-weevup-dark">$1</h3>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-800">$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                const formattedHtml = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-display font-black text-xl uppercase text-white bg-neo-green/20 px-1">$1</strong>')
+                    .replace(/### (.*?)\n/g, '<h3 class="font-display text-2xl font-black mt-6 mb-3 border-b-4 border-neo-green inline-block">$1</h3><br>')
+                    .replace(/\n\n/g, '<br><br>')
                     .replace(/\n/g, '<br>');
-                    
-                aiContent.innerHTML = formattedText;
-                aiContent.classList.remove('hidden');
-                btnExportPDF.classList.remove('hidden'); // Afficher le bouton PDF après succès
+                
+                aiLoading.classList.add('hidden');
+                aiLoading.style.display = '';
+                throwConfetti(); // Explosion de victoire !
+                await typeWriterHTML(aiContent, formattedHtml);
+                btnExportPDF.classList.remove('hidden');
             } catch (err) {
-                aiError.textContent = "Oups, une erreur s'est produite lors de la connexion à l'IA. Veuillez réessayer.";
+                aiLoading.classList.add('hidden');
+                aiLoading.style.display = '';
                 aiError.classList.remove('hidden');
             } finally {
-                aiLoading.classList.add('hidden');
+                btnGenerateAI.innerHTML = '<i class="fas fa-bolt text-neo-yellow"></i> Générer !';
+                btnGenerateAI.disabled = false;
             }
         });
 
-        // Fonctionnalité d'export PDF
+        // --- 7. Export PDF ---
         btnExportPDF.addEventListener('click', () => {
-            // Indiquer le chargement sur le bouton
             const originalText = btnExportPDF.innerHTML;
-            btnExportPDF.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Génération...';
+            btnExportPDF.innerHTML = '⏳ Impression...';
             btnExportPDF.disabled = true;
 
-            // Création d'un élément conteneur invisible optimisé pour l'impression PDF
             const element = document.createElement('div');
             element.style.padding = '40px';
-            element.style.fontFamily = 'Arial, sans-serif';
-            element.style.color = '#1e293b';
-            element.style.lineHeight = '1.6';
-            element.style.backgroundColor = '#ffffff';
-            element.style.width = '800px'; // Forcer une largeur pour html2canvas
-            element.style.position = 'absolute'; // Sortir du flux normal
-            element.style.left = '-9999px'; // Cacher l'élément hors de l'écran
+            element.style.fontFamily = "'Courier New', Courier, monospace";
+            element.style.color = '#0f172a';
+            element.style.backgroundColor = '#fefce8';
+            element.style.width = '800px';
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
             element.style.top = '0';
             
             const extra = aiExtraInstructions.value.trim();
-            
+            const rawContent = aiContent.innerHTML;
+
             element.innerHTML = `
-                <div style="border-bottom: 3px solid #16a34a; padding-bottom: 10px; margin-bottom: 30px;">
-                    <h1 style="color: #14532d; font-size: 28px; margin: 0;">Concept de Jeu RSE Weevup</h1>
-                    <p style="color: #64748b; margin-top: 5px; font-size: 14px;">Généré par intelligence artificielle le ${new Date().toLocaleDateString('fr-FR')}</p>
+                <div style="border: 4px solid #0f172a; padding: 30px; margin-bottom: 30px; background-color: #fde047; box-shadow: 8px 8px 0px #0f172a; position: relative;">
+                    <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%) rotate(-2deg); width: 80px; height: 30px; background: rgba(255,255,255,0.7); border: 2px solid #000;"></div>
+                    <div style="font-weight: bold; letter-spacing: 3px; font-size: 12px; margin-bottom: 10px;">AGENCE WEEVUP // DOSSIER CONFIDENTIEL</div>
+                    <h1 style="font-size: 42px; margin: 0; font-weight: 900; text-transform: uppercase; font-family: 'Arial Black', sans-serif;">PITCH DU JEU RSE</h1>
+                    <p style="margin-top: 10px; font-weight: bold; border-top: 2px solid #0f172a; padding-top: 10px;">Généré par La Machine à Idées le ${new Date().toLocaleDateString('fr-FR')}</p>
                 </div>
                 
-                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
-                    <h3 style="color: #16a34a; margin-top: 0; font-size: 18px; margin-bottom: 15px;">Paramètres de conception :</h3>
-                    <ul style="margin:0; padding-left: 20px; font-size: 14px; list-style-type: square;">
-                        <li style="margin-bottom: 8px;"><b>Objectif :</b> ${aiOptions.objective.choices[aiState.objective]}</li>
-                        <li style="margin-bottom: 8px;"><b>Mécanique :</b> ${aiOptions.mechanic.choices[aiState.mechanic]}</li>
-                        <li style="margin-bottom: 8px;"><b>Format :</b> ${aiOptions.format.choices[aiState.format]}</li>
-                        <li style="margin-bottom: 8px;"><b>Thématique :</b> ${aiOptions.theme.choices[aiState.theme]}</li>
-                        <li style="margin-bottom: 8px;"><b>Univers :</b> ${aiOptions.universe.choices[aiState.universe]}</li>
-                        <li style="margin-bottom: 8px;"><b>Ton :</b> ${aiOptions.tone.choices[aiState.tone]}</li>
-                    </ul>
-                    ${extra ? `<div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1; font-size: 14px;"><b>Consignes supplémentaires :</b> <i>"${extra}"</i></div>` : ''}
+                <div style="border: 4px solid #0f172a; padding: 25px; margin-bottom: 30px; background-color: #ffffff; box-shadow: 4px 4px 0px #0f172a;">
+                    <h3 style="margin-top: 0; font-size: 18px; text-transform: uppercase; font-weight: 900; font-family: 'Arial Black', sans-serif; border-bottom: 2px dashed #0f172a; padding-bottom: 10px; margin-bottom: 15px;">Filtres de la Machine :</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🎯 Objectif: ${aiOptions.objective.choices[aiState.objective]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #4ade80;">⚙️ Méca: ${aiOptions.mechanic.choices[aiState.mechanic]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">⏱️ Format: ${aiOptions.format.choices[aiState.format]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🌱 Thème: ${aiOptions.theme.choices[aiState.theme]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🚀 Univers: ${aiOptions.universe.choices[aiState.universe]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🎭 Ton: ${aiOptions.tone.choices[aiState.tone]}</span>
+                    </div>
+                    ${extra ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #0f172a; font-weight: bold; background-color: #fee2e2; padding: 10px; border-radius: 4px;">⚠️ Règle d'or imposée : "${extra}"</div>` : ''}
                 </div>
                 
-                <div style="font-size: 15px;">
-                    ${aiContent.innerHTML}
+                <div style="font-size: 16px; line-height: 1.8; background-color: #ffffff; padding: 30px; border: 4px solid #0f172a; box-shadow: 6px 6px 0px #0f172a;">
+                    ${rawContent.replace(/class="[^"]*"/g, '')}
                 </div>
             `;
 
-            // CRUCIAL : Ajouter au body pour que la librairie puisse capturer l'élément
             document.body.appendChild(element);
 
-            // Options de html2pdf
             const opt = {
                 margin:       15,
-                filename:     'Concept_Weevup_Brainstorming.pdf',
+                filename:     'Weevup_Jeu_RSE.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Génération et nettoyage
             html2pdf().set(opt).from(element).save().then(() => {
-                document.body.removeChild(element); // Nettoyer le dom
-                btnExportPDF.innerHTML = originalText;
+                document.body.removeChild(element);
+                btnExportPDF.innerHTML = '<i class="fas fa-print"></i> PDF';
                 btnExportPDF.disabled = false;
             }).catch(err => {
-                console.error("Erreur PDF :", err);
+                console.error(err);
                 document.body.removeChild(element);
-                btnExportPDF.innerHTML = '<i class="fas fa-file-pdf text-red-400"></i> Erreur, réessayer';
+                btnExportPDF.innerHTML = 'Erreur';
                 btnExportPDF.disabled = false;
             });
         });
