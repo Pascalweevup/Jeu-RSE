@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEVUP | Le Jeu RSE Ultime</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        hand: ['Caveat', 'cursive'],
+                    },
+                    colors: {
+                        neo: {
+                            green: '#4ade80',
+                            yellow: '#fde047',
+                            pink: '#f472b6',
+                            blue: '#60a5fa',
+                            orange: '#fb923c',
+                            purple: '#a78bfa',
+                            dark: '#0f172a',
+                            bg: '#fefce8'
+                        }
+                    },
+                    boxShadow: {
+                        'neo': '6px 6px 0px 0px rgba(15, 23, 42, 1)',
+                        'neo-hover': '10px 10px 0px 0px rgba(15, 23, 42, 1)',
+                        'neo-sm': '4px 4px 0px 0px rgba(15, 23, 42, 1)',
+                    },
+                    animation: {
+                        'marquee': 'marquee 30s linear infinite',
+                        'wiggle': 'wiggle 3s ease-in-out infinite',
+                        'pop': 'pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'spin-fast': 'spin 0.4s ease-in-out'
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        },
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.5)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Tuer les puces natives du navigateur de façon globale */
+        ul, ol, li {
+            list-style: none !important;
+            list-style-type: none !important;
+            margin: 0; padding: 0;
+        }
+
+        body {
+            background-color: #fefce8; /* neo-bg */
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 30px 30px;
+            color: #0f172a;
+            /* Curseur Réticule */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%230f172a" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"><path d="M12 2v20M2 12h20"/></svg>') 12 12, auto;
+        }
+
+        .border-neo {
+            border: 4px solid #0f172a;
+        }
+
+        /* Ruban de signalisation Chantier (Hazard Tape) */
+        .hazard-tape {
+            background: repeating-linear-gradient(45deg, #fde047, #fde047 15px, #0f172a 15px, #0f172a 30px);
+            height: 16px;
+            width: 100%;
+            border-top: 4px solid #0f172a;
+            border-bottom: 4px solid #0f172a;
+        }
+
+        /* Post-it Tape effect */
+        .tape {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            width: 140px;
+            height: 38px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-left: 3px dotted rgba(0, 0, 0, 0.5);
+            border-right: 3px dotted rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), inset 0 0 8px rgba(255,255,255,0.4);
+            z-index: 50; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .tape::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.8) 35%, transparent 40%, transparent 60%, rgba(255,255,255,0.8) 65%, transparent 70%);
+            mix-blend-mode: overlay;
+            pointer-events: none;
+        }
+        .tape:hover {
+            transform: translateX(-50%) rotate(-1deg) translateY(-3px) scale(1.05);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 12px -2px rgba(0,0,0,0.2), inset 0 0 8px rgba(255,255,255,0.6);
+        }
+
+        /* Hide scrollbar visually */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing !important; }
+
+        .marquee-wrapper {
+            display: flex;
+            overflow: hidden;
+            user-select: none;
+        }
+        .marquee-content {
+            display: flex;
+            flex-shrink: 0;
+            gap: 2rem;
+            min-width: 100%;
+        }
+        .marquee-wrapper:hover .marquee-content {
+            animation-play-state: paused;
+        }
+
+        /* --- Animations et Effets --- */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Curseur Pointeur sur éléments interactifs */
+        a, button, .cursor-pointer, input, .cursor-grab {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23f472b6" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>') 12 12, pointer !important;
+        }
+
+        /* Physique des boutons Brutalistes */
+        .btn-brutal {
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+        }
+        .btn-brutal:active {
+            transform: translate(6px, 6px) !important;
+            box-shadow: 0px 0px 0px 0px rgba(15, 23, 42, 1) !important;
+        }
+
+        /* 3D Tilt Effect Base Class */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Effet d'écran d'arcade (CRT) */
+        .crt-screen {
+            background-color: #0f172a;
+            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            box-shadow: inset 0 0 50px rgba(0,0,0,1);
+            color: #4ade80;
+            text-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+        }
+        
+        /* Animation des blocs d'énergie refondue */
+        .energy-block {
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .reveal.active .energy-block {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .energy-block:hover {
+            transform: scale(1.15) !important;
+            filter: brightness(1.2);
+            box-shadow: 4px 4px 0px 0px rgba(15, 23, 42, 1);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Effet Carte Holographique */
+        .holo-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .holo-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.8) 50%, transparent 55%);
+            transform: rotate(45deg) translateX(-150%);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 20;
+        }
+        .holo-card:hover::after {
+            transform: rotate(45deg) translateX(150%);
+        }
+
+        /* Effet Glitch Titre (Sporadique) */
+        .glitch-text {
+            position: relative;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 #f472b6;
+            animation: glitch-anim 4s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 #60a5fa;
+            animation: glitch-anim 3.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0%, 80% { clip: rect(0, 0, 0, 0); opacity: 0; }
+            81% { clip: rect(15px, 9999px, 91px, 0); opacity: 0.8; }
+            85% { clip: rect(61px, 9999px, 34px, 0); opacity: 0.8; }
+            90% { clip: rect(98px, 9999px, 81px, 0); opacity: 0.8; }
+            95% { clip: rect(4px, 9999px, 91px, 0); opacity: 0.8; }
+            100% { clip: rect(31px, 9999px, 12px, 0); opacity: 0.8; }
+        }
+
+        /* Ligne de balayage CRT */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(74,222,128,0.2) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.5;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            animation: scanline 6s linear infinite;
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(500%); }
+        }
+
+        /* Tier List Colors */
+        .tier-s { background-color: #fca5a5; } /* red-300 */
+        .tier-a { background-color: #fcd34d; } /* yellow-300 */
+        .tier-b { background-color: #86efac; } /* green-300 */
+        .tier-c { background-color: #93c5fd; } /* blue-300 */
+
+        /* Messy Cards (Portrait Robot) */
+        .messy-card:nth-child(odd) { transform: rotate(-2deg); }
+        .messy-card:nth-child(even) { transform: rotate(2deg); }
+        .messy-card:hover { transform: rotate(0deg) scale(1.05) translateY(-8px); }
+
+        /* AI Progress Bar */
+        @keyframes fillBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        .ai-progress-bar {
+            animation: fillBar 3s ease-in-out forwards;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-neo-pink selection:text-white relative">
+
+    <!-- En-tête / Hero Section -->
+    <header class="relative min-h-[80vh] flex flex-col justify-center items-center px-6 overflow-hidden pt-20 pb-20">
+        
+        <!-- Floating decorative elements -->
+        <div class="absolute top-10 left-10 text-6xl text-neo-blue animate-wiggle opacity-80"><i class="fas fa-gamepad"></i></div>
+        <div class="absolute bottom-32 right-10 text-7xl text-neo-pink animate-wiggle opacity-80" style="animation-delay: 1s;"><i class="fas fa-dice"></i></div>
+        <div class="absolute top-32 right-20 text-5xl text-neo-green animate-wiggle opacity-80" style="animation-delay: 0.5s;"><i class="fas fa-puzzle-piece"></i></div>
+
+        <!-- Sticker 100% Approuvé (Draggable) -->
+        <div id="sticker-100" class="absolute top-1/4 right-[15%] w-32 h-32 bg-neo-yellow border-neo shadow-neo rounded-full flex items-center justify-center transform rotate-12 animate-pop z-50 cursor-grab hover:scale-105 transition-transform" style="animation-delay: 1s;" title="Déplace-moi !">
+            <div class="absolute inset-2 border-2 border-dashed border-neo-dark rounded-full pointer-events-none"></div>
+            <div class="text-center font-display font-black uppercase text-neo-dark leading-none pointer-events-none">
+                <span class="text-3xl block">100%</span>
+                <span class="text-sm">Approuvé</span>
+            </div>
+        </div>
+
+        <div class="relative z-10 text-center w-full max-w-5xl mx-auto">
+            
+            <div class="inline-block bg-neo-yellow border-neo shadow-neo px-6 py-2 rounded-full font-display text-xl font-bold uppercase tracking-widest mb-8 rotate-2 hover:rotate-0 transition-transform cursor-default">
+                Mission Bêta : Enquête Interne
+            </div>
+            
+            <h1 class="font-display text-6xl md:text-8xl font-black leading-tight tracking-tighter mb-8 text-neo-dark uppercase glitch-text" data-text="Le Jeu RSE">
+                Le Jeu RSE <br>
+                <span class="bg-neo-green px-4 py-1 inline-block -rotate-2 mt-2 border-neo shadow-neo text-neo-dark">Parfait.</span>
+            </h1>
+            
+            <p class="font-hand text-3xl md:text-4xl max-w-2xl mx-auto mb-16 text-slate-700 leading-relaxed">
+                "On a demandé à l'équipe ce qui la faisait vibrer. Voici la recette secrète de notre futur hit Weevup !"
+            </p>
+        </div>
+
+        <!-- ARCADE PRESS START -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-neo-dark animate-pulse cursor-pointer hover:scale-110 transition-transform z-20" onclick="document.getElementById('tier-list').scrollIntoView({behavior: 'smooth'})">
+            <span class="font-display font-black uppercase tracking-widest text-xl bg-neo-yellow px-4 py-2 border-neo shadow-neo-sm transform -rotate-2">Press Start</span>
+            <i class="fas fa-caret-down text-4xl mt-1"></i>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-32">
+
+        <!-- Section 1: Motivations (Tier List) -->
+        <section id="tier-list" class="reveal">
+            <div class="mb-12 flex flex-col md:flex-row items-center gap-6">
+                <div class="w-16 h-16 bg-neo-yellow border-neo shadow-neo flex items-center justify-center text-3xl rotate-12 shrink-0"><i class="fas fa-heart"></i></div>
+                <div>
+                    <h2 class="font-display text-5xl font-black uppercase">Tier List des Motivations</h2>
+                    <p class="font-sans font-semibold text-slate-600 text-lg mt-2">Ce qui nous donne envie de jouer, du rang S au rang C.</p>
+                </div>
+            </div>
+
+            <div class="bg-white border-neo shadow-neo rounded-3xl p-4 md:p-8 flex flex-col gap-4 tilt-card">
+                
+                <!-- S Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch">
+                    <div class="tier-s border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm">S</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-6 py-3 flex items-center gap-3 shadow-neo-sm transform hover:-translate-y-1 transition-transform cursor-default">
+                            <span class="text-2xl">😂</span> <span class="font-bold text-lg">Détente & Rire</span> <span class="bg-neo-dark text-white px-2 py-1 rounded font-display text-sm ml-2">8/9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- A Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch">
+                    <div class="tier-a border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm">A</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-6 py-3 flex items-center gap-3 shadow-neo-sm transform hover:-translate-y-1 transition-transform cursor-default">
+                            <span class="text-2xl">🤝</span> <span class="font-bold text-lg">Collaboration</span> <span class="bg-neo-dark text-white px-2 py-1 rounded font-display text-sm ml-2">6/9</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-6 py-3 flex items-center gap-3 shadow-neo-sm transform hover:-translate-y-1 transition-transform cursor-default">
+                            <span class="text-2xl">🎭</span> <span class="font-bold text-lg">Immersion</span> <span class="bg-neo-dark text-white px-2 py-1 rounded font-display text-sm ml-2">6/9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- B Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch">
+                    <div class="tier-b border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm">B</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 shadow-neo-sm cursor-default">
+                            <span class="text-xl">🏆</span> <span class="font-bold">Compétition</span> <span class="bg-slate-200 text-neo-dark px-2 py-1 rounded font-display text-xs">4/9</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 shadow-neo-sm cursor-default">
+                            <span class="text-xl">🌱</span> <span class="font-bold">Utilité (Sens)</span> <span class="bg-slate-200 text-neo-dark px-2 py-1 rounded font-display text-xs">4/9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- C Tier -->
+                <div class="flex flex-col md:flex-row gap-4 items-stretch">
+                    <div class="tier-c border-neo rounded-xl w-full md:w-32 flex shrink-0 items-center justify-center font-display text-4xl font-black shadow-neo-sm">C</div>
+                    <div class="flex-grow bg-slate-50 border-neo rounded-xl p-4 flex flex-wrap gap-4 items-center">
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 cursor-default">
+                            <span class="text-lg">🧠</span> <span class="font-bold text-sm">Réflexion</span> <span class="bg-slate-200 text-neo-dark px-2 py-0.5 rounded font-display text-xs">2</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 cursor-default">
+                            <span class="text-lg">⚡</span> <span class="font-bold text-sm">Action</span> <span class="bg-slate-200 text-neo-dark px-2 py-0.5 rounded font-display text-xs">2</span>
+                        </div>
+                        <div class="bg-white border-neo rounded-full px-4 py-2 flex items-center gap-2 opacity-60 cursor-default">
+                            <span class="text-lg">🎁</span> <span class="font-bold text-sm">Récompense</span> <span class="bg-slate-200 text-neo-dark px-2 py-0.5 rounded font-display text-xs">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Insight Post-it -->
+            <div class="mt-8 flex justify-end">
+                <div class="bg-yellow-200 border-neo shadow-neo p-6 rounded-br-3xl w-full md:w-2/3 lg:w-1/2 relative transform rotate-2 hover:rotate-0 transition-transform">
+                    <div class="tape"></div>
+                    <h4 class="font-display text-xl font-bold mb-2 uppercase flex items-center gap-2"><i class="fas fa-pen text-neo-blue"></i> Note de l'équipe</h4>
+                    <p class="font-hand text-2xl leading-tight text-slate-800">La gagne passe au second plan ! On veut décompresser ensemble et se raconter des histoires (Immersion + Collab). Les cadeaux à la fin, on s'en fiche un peu 🤷‍♀️</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Mécaniques (Arcade Power Bars) -->
+        <section>
+            <div class="mb-12 flex flex-col md:flex-row items-center gap-6 reveal">
+                <div class="w-16 h-16 bg-neo-pink border-neo shadow-neo flex items-center justify-center text-3xl -rotate-12 shrink-0 text-white"><i class="fas fa-bolt"></i></div>
+                <div>
+                    <h2 class="font-display text-5xl font-black uppercase">Jauges de Gameplay</h2>
+                    <p class="font-sans font-semibold text-slate-600 text-lg mt-2">Quelles actions nous amusent le plus ? (Points d'énergie sur 9)</p>
+                </div>
+            </div>
+
+            <div class="bg-white border-neo shadow-neo rounded-3xl p-6 md:p-10 space-y-8 tilt-card">
+                
+                <!-- Bar 1 -->
+                <div class="reveal group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-display text-xl font-bold uppercase transition-transform group-hover:translate-x-2">Bluff & Rôles cachés</span>
+                        <span class="font-hand text-2xl font-bold text-neo-pink">6 votes</span>
+                    </div>
+                    <div class="flex gap-1.5 h-10">
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 100ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 200ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 300ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 400ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 500ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 600ms;"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                    </div>
+                </div>
+
+                <!-- Bar 2 -->
+                <div class="reveal group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-display text-xl font-bold uppercase transition-transform group-hover:translate-x-2">Association d'idées</span>
+                        <span class="font-hand text-2xl font-bold text-neo-pink">6 votes</span>
+                    </div>
+                    <div class="flex gap-1.5 h-10">
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 150ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 250ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 350ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 450ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 550ms;"></div>
+                        <div class="flex-1 bg-neo-pink border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 650ms;"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                    </div>
+                </div>
+
+                <!-- Bar 3 -->
+                <div class="reveal group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-display text-xl font-bold uppercase transition-transform group-hover:translate-x-2">Gestion & Négociation</span>
+                        <span class="font-hand text-2xl font-bold text-neo-blue">4 votes</span>
+                    </div>
+                    <div class="flex gap-1.5 h-8">
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 200ms;"></div>
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 300ms;"></div>
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 400ms;"></div>
+                        <div class="flex-1 bg-neo-blue border-neo border-2 shadow-[2px_2px_0_#0f172a] energy-block" style="transition-delay: 500ms;"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                        <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-50"></div>
+                    </div>
+                </div>
+
+                <!-- Bar 4 & 5 (Smaller) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 reveal">
+                    <div class="group cursor-default">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-display text-sm font-bold uppercase text-slate-500 transition-transform group-hover:translate-x-1">Coopération asymétrique</span>
+                            <span class="font-hand text-xl font-bold text-neo-green">3 votes</span>
+                        </div>
+                        <div class="flex gap-1 h-6">
+                            <div class="flex-1 bg-neo-green border-neo border-2 energy-block" style="transition-delay: 300ms;"></div>
+                            <div class="flex-1 bg-neo-green border-neo border-2 energy-block" style="transition-delay: 400ms;"></div>
+                            <div class="flex-1 bg-neo-green border-neo border-2 energy-block" style="transition-delay: 500ms;"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                        </div>
+                    </div>
+                    <div class="group cursor-default">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-display text-sm font-bold uppercase text-slate-400 transition-transform group-hover:translate-x-1">Hasard & Risque</span>
+                            <span class="font-hand text-xl font-bold text-slate-400">1 vote</span>
+                        </div>
+                        <div class="flex gap-1 h-6 opacity-60">
+                            <div class="flex-1 bg-slate-400 border-neo border-2 energy-block" style="transition-delay: 400ms;"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                            <div class="flex-1 bg-slate-100 border-neo border-2 border-dashed opacity-40"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Format, Durée, Thèmes -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 reveal">
+            
+            <!-- Left: Settings -->
+            <div class="space-y-8">
+                <!-- Formats (Design fidèle à l'image_45ef50.png) -->
+                <div class="bg-neo-blue border-neo shadow-neo rounded-3xl p-6 md:p-8 transform -rotate-1 relative pt-10">
+                    <div class="tape" title="Ne pas décoller !"></div>
+
+                    <h2 class="font-display text-4xl font-black uppercase mb-8 text-white drop-shadow-[3px_3px_0_#0f172a] mt-2 relative z-10 transform -rotate-2">La Forme Idéale</h2>
+                    
+                    <div class="space-y-4 cursor-default relative z-10">
+                        <!-- Format Cards - Gagnant -->
+                        <div class="bg-neo-yellow border-neo rounded-xl p-3 flex justify-between items-center shadow-[4px_4px_0_#0f172a] transform hover:translate-x-2 transition-transform">
+                            <span class="font-bold text-lg flex items-center gap-3 text-neo-dark">
+                                <div class="w-6 h-6 bg-neo-dark rounded flex items-center justify-center text-white text-xs"><i class="fas fa-check"></i></div> 
+                                Challenge (Multi)
+                            </span>
+                            <span class="bg-neo-dark text-white px-3 py-1 font-display font-bold rounded text-sm shrink-0 shadow-inner">6 votes</span>
+                        </div>
+                        
+                        <!-- Format Cards - Second -->
+                        <div class="bg-white border-neo rounded-xl p-3 flex justify-between items-center shadow-[4px_4px_0_#0f172a] transform hover:translate-x-2 transition-transform">
+                            <span class="font-bold text-lg flex items-center gap-3 text-slate-700">
+                                <div class="w-6 h-6 bg-slate-300 rounded flex items-center justify-center text-white text-xs"><i class="fas fa-check"></i></div> 
+                                Escape Game
+                            </span>
+                            <span class="bg-neo-dark text-white px-3 py-1 font-display font-bold rounded text-sm shrink-0">5 votes</span>
+                        </div>
+
+                        <!-- Tickets -->
+                        <div class="flex gap-2 md:gap-3 mt-6">
+                            <div class="bg-white/90 border-neo border-2 border-dashed rounded-xl p-2 flex-1 text-center hover:bg-white transition-colors">
+                                <div class="font-bold text-sm mt-1 text-neo-dark">Plateau</div><div class="font-hand text-xl text-neo-blue">4 votes</div>
+                            </div>
+                            <div class="bg-white/90 border-neo border-2 border-dashed rounded-xl p-2 flex-1 text-center hover:bg-white transition-colors">
+                                <div class="font-bold text-sm mt-1 text-neo-dark">Maker</div><div class="font-hand text-xl text-neo-pink">4 votes</div>
+                            </div>
+                            <div class="bg-white/60 border-neo border-2 border-dashed rounded-xl p-2 flex-1 text-center opacity-80">
+                                <div class="font-bold text-xs mt-1 text-slate-500">Phygital</div><div class="font-hand text-xl text-slate-400">2 votes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Durée (Design fidèle à l'image_45ef50.png) -->
+                <div class="bg-white border-neo shadow-[8px_8px_0_#fb923c] rounded-3xl p-6 md:p-8 transform rotate-1 relative mt-8">
+                    <h3 class="font-display text-3xl font-black uppercase mb-6"><i class="fas fa-stopwatch text-neo-orange"></i> Time Limit</h3>
+                    
+                    <div class="flex flex-col gap-4 cursor-default">
+                        <!-- Vainqueur -->
+                        <div class="bg-neo-dark text-white border-neo p-4 relative transform -rotate-1 hover:rotate-0 transition-transform">
+                            <div class="absolute -top-3 -right-3 bg-neo-yellow text-neo-dark border-neo px-3 py-1 font-display font-bold text-sm transform rotate-6 shadow-neo-sm">VAINQUEUR</div>
+                            <div class="text-neo-green font-display text-5xl md:text-6xl font-black tracking-tighter">45<span class="text-3xl">M</span> - 1<span class="text-3xl">H</span></div>
+                            <div class="font-hand text-2xl text-slate-300 mt-2">4 votes pour ce format court !</div>
+                        </div>
+
+                        <!-- Classique -->
+                        <div class="bg-slate-50 border-neo p-3 flex justify-between items-center transform rotate-1 shadow-neo-sm hover:translate-x-1 transition-transform">
+                            <span class="font-display font-bold text-lg text-slate-700">1H15 - 1H30</span>
+                            <span class="font-hand text-2xl font-bold text-slate-500">3 votes</span>
+                        </div>
+
+                        <!-- Les oubliés -->
+                        <div class="flex gap-2 md:gap-3 opacity-70 mt-2">
+                            <div class="flex-1 border-neo border-2 border-dashed p-2 text-center rounded bg-slate-50">
+                                <div class="font-bold text-[10px] uppercase mb-1 text-neo-dark">2H+</div>
+                                <div class="font-display font-bold text-lg text-neo-dark">1</div>
+                            </div>
+                            <div class="flex-1 border-neo border-2 border-dashed p-2 text-center rounded bg-slate-50">
+                                <div class="font-bold text-[10px] uppercase mb-1 text-neo-dark">Variable</div>
+                                <div class="font-display font-bold text-lg text-neo-dark">1</div>
+                            </div>
+                            <div class="flex-1 border-neo border-2 border-dashed p-2 text-center rounded bg-red-50 text-red-500 opacity-60">
+                                <div class="font-bold text-[10px] uppercase mb-1 line-through">20min</div>
+                                <div class="font-display font-bold text-lg">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Quest Log (Themes) - Refonte Interactive V9 -->
+            <div class="bg-neo-bg border-neo shadow-neo rounded-3xl p-6 md:p-8 relative tilt-card">
+                <!-- Holes for notebook -->
+                <div class="absolute top-0 left-6 w-4 h-full flex flex-col justify-evenly py-8">
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                    <div class="w-4 h-4 rounded-full bg-neo-dark shadow-inner"></div>
+                </div>
+
+                <div class="pl-4 md:pl-10 flex flex-col h-full">
+                    <!-- Titre Journal -->
+                    <div class="mb-10">
+                        <h2 class="font-hand text-5xl font-bold leading-tight text-neo-dark inline-block relative">
+                            <span class="relative z-10">Journal de Quêtes</span>
+                            <!-- Surlignage vert brutaliste en fond -->
+                            <div class="absolute bottom-1 left-0 w-full h-4 bg-neo-green opacity-50 transform -rotate-1 z-0"></div>
+                        </h2>
+                        <h2 class="font-hand text-5xl font-bold text-neo-dark">(RSE)</h2>
+                        <p class="font-display font-bold text-slate-400 text-[10px] uppercase tracking-widest mt-4">Objectifs de la mission</p>
+                    </div>
+                    
+                    <!-- Themes List - Effet Hover "Sticker Brutaliste" -->
+                    <div class="font-hand text-3xl space-y-2 mb-8 flex flex-col flex-grow">
+                        
+                        <!-- Item 1 -->
+                        <div class="flex items-center justify-between gap-4 group cursor-pointer p-3 rounded-xl border-4 border-transparent hover:border-neo hover:bg-white hover:shadow-[4px_4px_0_#0f172a] transition-all hover:-translate-y-1 hover:rotate-1">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-neo-green border-2 border-transparent group-hover:border-neo shadow-sm group-hover:shadow-[2px_2px_0_#0f172a] text-white flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-all"><i class="fas fa-check"></i></div>
+                                <strong class="font-display text-2xl uppercase tracking-wide text-neo-dark">1. Engagement Solidaire</strong>
+                            </div>
+                            <span class="text-slate-600 font-hand text-xl bg-white border-2 border-slate-300 group-hover:border-neo rounded-[2rem] px-5 py-1 shadow-sm group-hover:shadow-[2px_2px_0_#0f172a] whitespace-nowrap shrink-0 group-hover:bg-neo-yellow group-hover:text-neo-dark transition-all">6 votes</span>
+                        </div>
+                        
+                        <!-- Item 2 -->
+                        <div class="flex items-center justify-between gap-4 group cursor-pointer p-3 rounded-xl border-4 border-transparent hover:border-neo hover:bg-white hover:shadow-[4px_4px_0_#0f172a] transition-all hover:-translate-y-1 hover:-rotate-1">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-neo-yellow border-2 border-transparent group-hover:border-neo shadow-sm group-hover:shadow-[2px_2px_0_#0f172a] text-white flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-all"><i class="fas fa-check"></i></div>
+                                <strong class="font-display text-xl uppercase tracking-wide text-neo-dark">2. Éco. Circulaire</strong>
+                            </div>
+                            <span class="text-slate-600 font-hand text-xl bg-white border-2 border-slate-300 group-hover:border-neo rounded-[2rem] px-5 py-1 shadow-sm group-hover:shadow-[2px_2px_0_#0f172a] whitespace-nowrap shrink-0 group-hover:bg-neo-pink group-hover:text-white transition-all">5 votes</span>
+                        </div>
+                        
+                        <!-- Item 3 -->
+                        <div class="flex items-center justify-between gap-4 group cursor-pointer p-3 rounded-xl border-4 border-transparent hover:border-neo hover:bg-white hover:shadow-[4px_4px_0_#0f172a] transition-all hover:-translate-y-1 hover:rotate-1 mt-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-neo-yellow border-2 border-transparent group-hover:border-neo shadow-sm group-hover:shadow-[2px_2px_0_#0f172a] text-white flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-all"><i class="fas fa-check"></i></div>
+                                <strong class="font-display text-xl uppercase tracking-wide text-neo-dark">2. Diversité / Inclusion</strong>
+                            </div>
+                            <span class="text-slate-600 font-hand text-xl bg-white border-2 border-slate-300 group-hover:border-neo rounded-[2rem] px-5 py-1 shadow-sm group-hover:shadow-[2px_2px_0_#0f172a] whitespace-nowrap shrink-0 group-hover:bg-neo-pink group-hover:text-white transition-all">5 votes</span>
+                        </div>
+                        
+                        <!-- Item 4 (Muted) -->
+                        <div class="flex items-center justify-between gap-4 opacity-60 group cursor-pointer p-3 rounded-xl border-4 border-transparent hover:border-dashed hover:border-slate-300 hover:bg-white hover:opacity-100 transition-all mt-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-slate-300 text-transparent flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform"><i class="fas fa-check"></i></div>
+                                <span class="text-2xl text-slate-500 font-hand group-hover:text-neo-dark transition-colors">Climat & Énergie</span>
+                            </div>
+                            <span class="text-slate-400 font-hand text-lg border-2 border-slate-200 rounded-[2rem] px-4 py-0.5 whitespace-nowrap shrink-0">(4 votes)</span>
+                        </div>
+                        
+                        <!-- Item 5 (Muted) -->
+                        <div class="flex items-center justify-between gap-4 opacity-60 group cursor-pointer p-3 rounded-xl border-4 border-transparent hover:border-dashed hover:border-slate-300 hover:bg-white hover:opacity-100 transition-all">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-slate-300 text-transparent flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform"><i class="fas fa-check"></i></div>
+                                <span class="text-2xl text-slate-500 font-hand group-hover:text-neo-dark transition-colors">Éthique</span>
+                            </div>
+                            <span class="text-slate-400 font-hand text-lg border-2 border-slate-200 rounded-[2rem] px-4 py-0.5 whitespace-nowrap shrink-0">(4 votes)</span>
+                        </div>
+                        
+                        <!-- Item 6 (Muted) -->
+                        <div class="flex items-center justify-between gap-4 opacity-40 group cursor-pointer p-3 rounded-xl border-4 border-transparent hover:border-dashed hover:border-slate-300 hover:bg-white hover:opacity-100 transition-all">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded bg-slate-300 text-transparent flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform"><i class="fas fa-check"></i></div>
+                                <span class="text-xl text-slate-400 font-hand group-hover:text-neo-dark transition-colors">QVCT (3) / Numérique (1)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tampon Interactif de validation -->
+                    <div class="mt-auto pt-6 pb-2 flex justify-center md:justify-end">
+                        <div class="border-[6px] border-neo-green text-neo-green bg-white/50 rounded-full w-36 h-36 flex flex-col items-center justify-center transform -rotate-12 opacity-80 hover:opacity-100 hover:rotate-0 hover:scale-105 hover:bg-white transition-all cursor-pointer relative shadow-[4px_4px_0_rgba(74,222,128,0.3)] hover:shadow-[6px_6px_0_rgba(74,222,128,1)] group">
+                            <i class="fas fa-certificate text-3xl mb-1 group-hover:animate-spin-fast group-hover:text-neo-yellow transition-colors"></i>
+                            <span class="font-display font-black uppercase text-xl text-center leading-none tracking-widest mt-1">Validé</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Nouvelle : Direction Artistique & Ton -->
+        <section class="reveal relative z-20">
+            <div class="mb-12 flex flex-col md:flex-row items-center gap-6">
+                <div class="w-16 h-16 bg-neo-purple border-neo shadow-neo flex items-center justify-center text-3xl rotate-6 shrink-0 text-white"><i class="fas fa-image"></i></div>
+                <div>
+                    <h2 class="font-display text-5xl font-black uppercase">Direction Artistique</h2>
+                    <p class="font-sans font-semibold text-slate-600 text-lg mt-2">L'univers visuel et le ton de notre future aventure.</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col xl:flex-row gap-8">
+                <!-- MOODBOARD (Univers) - Désormais interactif au survol -->
+                <div class="w-full xl:w-2/3 bg-neo-purple border-neo shadow-neo rounded-[2rem] p-6 md:p-10 relative overflow-hidden tilt-card" style="transform-origin: center center;">
+                    <!-- Deco -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <h3 class="font-display text-3xl font-black text-white mb-8 relative z-10 drop-shadow-[2px_2px_0_#0f172a]"><i class="fas fa-palette text-neo-yellow"></i> Le Moodboard</h3>
+
+                    <!-- Vainqueur Univers -->
+                    <div class="bg-white border-neo shadow-[8px_8px_0_#fde047] rounded-2xl p-4 flex flex-col md:flex-row gap-6 relative group transform hover:-translate-y-2 transition-transform duration-300">
+                        <div class="absolute -top-6 -left-4 text-6xl animate-bounce z-20 drop-shadow-md">👑</div>
+                        <div class="absolute -top-4 right-4 bg-neo-yellow border-neo shadow-neo-sm px-4 py-1 font-display font-black uppercase text-neo-dark transform rotate-3 z-20">
+                            Vainqueur
+                        </div>
+                        
+                        <!-- Image Container avec vrai visuel -->
+                        <div class="w-full md:w-1/2 bg-neo-dark border-4 border-neo rounded-xl overflow-hidden relative min-h-[200px] flex items-center justify-center shadow-inner">
+                            <img src="" alt="Science Fiction" class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
+                        </div>
+                        
+                        <!-- Text Content -->
+                        <div class="w-full md:w-1/2 flex flex-col justify-center pt-4 md:pt-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-display font-black text-3xl md:text-4xl text-neo-blue uppercase tracking-tight">Science<br>Fiction</h4>
+                                <span class="bg-neo-dark text-white px-3 py-1 font-display font-bold text-lg rounded border-neo shadow-neo-sm shrink-0">5 votes</span>
+                            </div>
+                            <p class="font-hand text-2xl text-slate-600 mt-2 leading-tight">Nouveau modèle de société sur une exoplanète. On repart de zéro !</p>
+                        </div>
+                    </div>
+
+                    <!-- Challengers -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 relative z-10">
+                        <!-- Thriller -->
+                        <div class="bg-slate-50 border-neo shadow-neo-sm rounded-xl p-3 flex flex-col transform hover:-translate-y-2 transition-transform duration-300 group">
+                            <div class="h-28 bg-neo-dark border-2 border-neo rounded-lg flex items-center justify-center mb-3 overflow-hidden relative shadow-inner">
+                                <img src="" alt="Thriller" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
+                            </div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h5 class="font-display font-black text-neo-orange leading-none uppercase text-sm">Thriller /<br>Enquête</h5>
+                                <span class="bg-neo-dark text-white text-[10px] px-1.5 py-0.5 rounded font-bold border-neo">4+4 v.</span>
+                            </div>
+                        </div>
+
+                        <!-- Utopie -->
+                        <div class="bg-slate-50 border-neo shadow-neo-sm rounded-xl p-3 flex flex-col transform hover:-translate-y-2 transition-transform duration-300 group opacity-90 hover:opacity-100">
+                            <div class="h-28 bg-neo-dark border-2 border-neo rounded-lg flex items-center justify-center mb-3 overflow-hidden relative shadow-inner">
+                                <img src="" alt="Utopie" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
+                            </div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h5 class="font-display font-black text-neo-green leading-none uppercase text-sm">Utopie<br>Solarpunk</h5>
+                                <span class="bg-neo-dark text-white text-[10px] px-1.5 py-0.5 rounded font-bold border-neo">3 v.</span>
+                            </div>
+                        </div>
+
+                        <!-- Méchants -->
+                        <div class="bg-slate-50 border-neo shadow-neo-sm rounded-xl p-3 flex flex-col transform hover:-translate-y-2 transition-transform duration-300 group opacity-90 hover:opacity-100">
+                            <div class="h-28 bg-neo-dark border-2 border-neo rounded-lg flex items-center justify-center mb-3 overflow-hidden relative shadow-inner">
+                                <img src="" alt="Méchants" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
+                            </div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h5 class="font-display font-black text-neo-purple leading-none uppercase text-sm">Jouer les<br>Méchants</h5>
+                                <span class="bg-neo-dark text-white text-[10px] px-1.5 py-0.5 rounded font-bold border-neo">3 v.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LE TON (Equalizer / Soundboard) -->
+                <div class="w-full xl:w-1/3 bg-white border-neo shadow-neo rounded-[2rem] p-6 md:p-8 relative tilt-card" style="transform-origin: center center;">
+                    <div class="tape" title="Ne pas décoller !"></div>
+                    <h3 class="font-display text-3xl font-black text-neo-dark mb-6 mt-2"><i class="fas fa-volume-up text-neo-pink"></i> Réglage du Ton</h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Gagnant -->
+                        <div class="bg-neo-pink border-neo shadow-[4px_4px_0_#0f172a] rounded-xl p-4 transform -rotate-1 hover:rotate-0 transition-transform relative z-10 cursor-default">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-xs uppercase tracking-widest text-pink-200">Choix N°1</span>
+                                <span class="bg-white text-neo-dark font-black px-2 py-1 rounded-md border-neo text-xs shadow-neo-sm">3 votes</span>
+                            </div>
+                            <h4 class="font-display font-black text-2xl text-white uppercase leading-tight">🤪 Léger &<br>Autodérision</h4>
+                        </div>
+
+                        <!-- Les autres tons -->
+                        <div class="bg-slate-50 border-neo border-dashed rounded-xl p-3 flex justify-between items-center hover:bg-slate-100 hover:border-solid transition-all group cursor-default">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl grayscale group-hover:grayscale-0 transition-all">👔</span>
+                                <span class="font-bold text-slate-600 group-hover:text-neo-dark uppercase text-sm">Sérieux</span>
+                            </div>
+                            <span class="font-hand text-xl text-slate-400 group-hover:text-neo-dark">2 votes</span>
+                        </div>
+
+                        <div class="bg-slate-50 border-neo border-dashed rounded-xl p-3 flex justify-between items-center hover:bg-slate-100 hover:border-solid transition-all group cursor-default">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl grayscale group-hover:grayscale-0 transition-all">🕵️</span>
+                                <span class="font-bold text-slate-600 group-hover:text-neo-dark uppercase text-sm">Mystérieux</span>
+                            </div>
+                            <span class="font-hand text-xl text-slate-400 group-hover:text-neo-dark">2 votes</span>
+                        </div>
+
+                        <div class="bg-slate-50 border-neo border-dashed rounded-xl p-3 flex justify-between items-center hover:bg-slate-100 hover:border-solid transition-all group cursor-default">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl grayscale group-hover:grayscale-0 transition-all">✨</span>
+                                <span class="font-bold text-slate-600 group-hover:text-neo-dark uppercase text-sm">Inspirant</span>
+                            </div>
+                            <span class="font-hand text-xl text-slate-400 group-hover:text-neo-dark">2 votes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: La Boîte à Idées (Polaroids Marquee) -->
+        <section class="reveal overflow-hidden py-10 -mx-4 md:-mx-8 bg-neo-dark text-white rounded-3xl border-neo shadow-neo transform rotate-1 relative">
+            <div class="hazard-tape absolute top-0 left-0"></div>
+            <div class="hazard-tape absolute bottom-0 left-0"></div>
+            <!-- Grille de fond ingénieur -->
+            <div class="absolute inset-0 opacity-20 pointer-events-none mt-4" style="background-image: linear-gradient(#4ade80 1px, transparent 1px), linear-gradient(90deg, #4ade80 1px, transparent 1px); background-size: 20px 20px;"></div>
+            
+            <div class="px-8 mb-8 mt-4 relative z-10">
+                <h2 class="font-display text-5xl font-black uppercase">Le Mur des <span class="text-neo-yellow">Idées</span></h2>
+                <p class="font-hand text-3xl mt-2 text-slate-300">Glissez pour voir ce qui est sorti du chapeau !</p>
+            </div>
+            
+            <div id="ideasCarousel" class="w-full overflow-x-auto flex no-scrollbar cursor-grab px-8 pb-12 pt-4 relative z-10">
+                
+                <!-- Rail 1 (Sera cloné parfaitement par le JS) -->
+                <div id="track1" class="flex gap-8 shrink-0 pr-8">
+                    <!-- Polaroids -->
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#fde047] transform -rotate-2 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">🌍</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Monopoly écolo</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Pour gagner des terrains il faut faire des bonnes actions (points RSE)."</p>
+                            <div class="text-sm font-bold uppercase text-neo-blue">— Alice</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#f472b6] transform rotate-3 mt-4 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">🎭</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Le rôle secret</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Chaque personnage a un rôle avec un pouvoir unique, ça inclut tout le monde."</p>
+                            <div class="text-sm font-bold uppercase text-neo-pink">— Juliya & Marilou</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#4ade80] transform -rotate-1 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">💡</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Impact (Maker)</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Construire des lampes envoyées aux enfants sans électricité."</p>
+                            <div class="text-sm font-bold uppercase text-neo-green">— Juliya</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#a78bfa] transform rotate-2 mt-2 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-slate-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">🏃‍♀️</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2">Escape Géant</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4">"Sauver la planète en s'amusant. Avec des comédiens dans un lieu insolite."</p>
+                            <div class="text-sm font-bold uppercase text-neo-purple">— Marie & Justine</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-neo-dark w-72 shrink-0 p-4 border-neo flex flex-col justify-between shadow-[8px_8px_0_#fca5a5] transform -rotate-3 mt-6 hover:-translate-y-2 transition-transform tilt-card">
+                        <div class="h-32 bg-red-100 border-neo border-2 mb-4 flex items-center justify-center text-5xl relative z-10">⚠️</div>
+                        <div class="relative z-10">
+                            <h3 class="font-display font-black text-xl mb-2 text-red-600">L'idée choc</h3>
+                            <p class="font-hand text-2xl leading-tight mb-4 text-slate-700">"Faire un jeu ice-breaker obligatoire de sensibilisation choc et réaliste."</p>
+                            <div class="text-sm font-bold uppercase text-red-500">— Alice</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Portrait Robot (Card Sheet) -->
+        <section class="reveal">
+            <div class="bg-neo-blue border-neo shadow-neo rounded-[2rem] p-8 md:p-12 relative overflow-hidden transform -rotate-1 text-neo-dark cursor-default tilt-card" style="transform-origin: center center;">
+                
+                <div class="flex flex-col md:flex-row justify-between mb-10 gap-6 relative z-10">
+                    <div>
+                        <div class="bg-white border-neo px-4 py-1 inline-block font-bold uppercase tracking-widest text-sm mb-4 shadow-neo-sm transform rotate-2">
+                            Profil Synthétique
+                        </div>
+                        <h2 class="font-display text-5xl md:text-6xl font-black uppercase text-white drop-shadow-[4px_4px_0_#0f172a]">Portrait-Robot</h2>
+                    </div>
+                    <div class="bg-white border-neo shadow-neo-sm p-4 rounded-xl max-w-xs rotate-1">
+                        <p class="font-hand text-2xl leading-tight text-slate-800">En combinant toutes les médailles d'or, on obtient l'ADN de notre jeu :</p>
+                    </div>
+                </div>
+
+                <!-- Messy Cards Layout -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 relative z-10">
+                    <div class="messy-card group bg-white hover:bg-neo-pink hover:text-white border-neo shadow-neo-sm rounded-xl p-4 text-center transition-all holo-card">
+                        <div class="text-4xl mb-2 relative z-10">😂</div>
+                        <div class="font-sans text-[10px] font-bold uppercase text-slate-400 group-hover:text-pink-100 mb-1 relative z-10 transition-colors">Objectif</div>
+                        <div class="font-display font-black text-sm relative z-10">Détente & Rire</div>
+                    </div>
+                    <div class="messy-card group bg-white hover:bg-neo-pink hover:text-white border-neo shadow-neo-sm rounded-xl p-4 text-center transition-all holo-card">
+                        <div class="text-4xl mb-2 relative z-10">🎭</div>
+                        <div class="font-sans text-[10px] font-bold uppercase text-slate-400 group-hover:text-pink-100 mb-1 relative z-10 transition-colors">Mécanique</div>
+                        <div class="font-display font-black text-sm relative z-10">Bluff & Rôles</div>
+                    </div>
+                    <div class="messy-card group bg-white hover:bg-neo-pink hover:text-white border-neo shadow-neo-sm rounded-xl p-4 text-center transition-all holo-card">
+                        <div class="text-4xl mb-2 relative z-10">⏱️</div>
+                        <div class="font-sans text-[10px] font-bold uppercase text-slate-400 group-hover:text-pink-100 mb-1 relative z-10 transition-colors">Format</div>
+                        <div class="font-display font-black text-sm relative z-10">Challenge (45m)</div>
+                    </div>
+                    <div class="messy-card group bg-white hover:bg-neo-pink hover:text-white border-neo shadow-neo-sm rounded-xl p-4 text-center transition-all holo-card">
+                        <div class="text-4xl mb-2 relative z-10">🤝</div>
+                        <div class="font-sans text-[10px] font-bold uppercase text-slate-400 group-hover:text-pink-100 mb-1 relative z-10 transition-colors">Thème</div>
+                        <div class="font-display font-black text-sm relative z-10">Solidaire</div>
+                    </div>
+                    <div class="messy-card group bg-white hover:bg-neo-pink hover:text-white border-neo shadow-neo-sm rounded-xl p-4 text-center transition-all holo-card">
+                        <div class="text-4xl mb-2 relative z-10">🚀</div>
+                        <div class="font-sans text-[10px] font-bold uppercase text-slate-400 group-hover:text-pink-100 mb-1 relative z-10 transition-colors">Univers</div>
+                        <div class="font-display font-black text-sm relative z-10">Science-Fiction</div>
+                    </div>
+                    <div class="messy-card group bg-white hover:bg-neo-pink hover:text-white border-neo shadow-neo-sm rounded-xl p-4 text-center transition-all holo-card">
+                        <div class="text-4xl mb-2 relative z-10">🤪</div>
+                        <div class="font-sans text-[10px] font-bold uppercase text-slate-400 group-hover:text-pink-100 mb-1 relative z-10 transition-colors">Ton</div>
+                        <div class="font-display font-black text-sm relative z-10">Autodérision</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: IA Generator -->
+        <section id="aiSection" class="reveal relative z-50">
+            <div class="border-neo shadow-neo rounded-[2rem] bg-neo-green p-6 md:p-10 relative overflow-visible transform rotate-1">
+                
+                <div class="bg-white border-neo rounded-2xl p-6 md:p-8 relative">
+                    <!-- Robot Spin on hover -->
+                    <div class="absolute -top-6 -right-6 bg-neo-yellow border-neo shadow-neo rounded-full w-16 h-16 flex items-center justify-center text-3xl animate-bounce z-20 cursor-pointer hover:animate-spin-fast">
+                        🤖
+                    </div>
+
+                    <h2 class="font-display text-4xl md:text-5xl font-black uppercase text-neo-dark mb-2">La Machine à Idées</h2>
+                    <p class="font-hand text-2xl text-slate-600 mb-8">Bidouillez les boutons, glissez une consigne et lancez l'IA !</p>
+                    
+                    <!-- Interactive Selectors -->
+                    <div id="aiParamGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 font-sans">
+                        <!-- JS Injected Dropdowns -->
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="bg-neo-bg border-neo rounded-xl p-3 flex flex-col md:flex-row gap-4 shadow-neo-sm relative z-20">
+                        <div class="flex-grow">
+                            <input type="text" id="aiExtraInstructions" class="w-full bg-transparent text-lg font-hand text-neo-dark focus:outline-none placeholder-slate-400 h-full px-2" placeholder="Ajouter une règle folle (ex: Jouable en chaussettes)...">
+                        </div>
+                        <button id="btnGenerateAI" class="btn-brutal bg-neo-dark text-white font-display uppercase font-black py-4 px-8 rounded-lg border-neo shadow-[4px_4px_0_#4ade80] hover:bg-slate-800 flex items-center justify-center gap-2 whitespace-nowrap z-10">
+                            <i class="fas fa-bolt text-neo-yellow"></i> Générer !
+                        </button>
+                        <button id="btnExportPDF" class="btn-brutal hidden bg-neo-yellow text-neo-dark font-display uppercase font-black py-4 px-6 rounded-lg border-neo shadow-[4px_4px_0_#0f172a] hover:bg-yellow-400 flex items-center justify-center gap-2 whitespace-nowrap z-10">
+                            <i class="fas fa-print"></i> PDF
+                        </button>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="aiResultContainer" class="mt-8 hidden">
+                        <div class="border-neo border-4 rounded-xl p-6 md:p-8 relative crt-screen overflow-hidden">
+                            <div class="tape top-0 left-10 rotate-3 bg-neo-green/30 border-neo-green text-neo-green flex items-center justify-center font-display text-[10px] tracking-widest uppercase z-10">CLASSIFIÉ</div>
+                            
+                            <!-- CRT Glitch & Scanline -->
+                            <div class="absolute top-0 left-0 w-full h-2 bg-white/10 animate-[pulse_3s_infinite] blur-sm pointer-events-none z-0"></div>
+                            <div class="scanline z-0"></div>
+                            
+                            <!-- Loading UI (Added Progress Bar) -->
+                            <div id="aiLoading" class="hidden flex-col items-center justify-center py-10 relative z-10">
+                                <div class="text-6xl animate-spin mb-4 text-neo-green"><i class="fas fa-compact-disc"></i></div>
+                                <p class="font-display font-black uppercase tracking-widest animate-pulse text-neo-green text-shadow-sm mb-4">Connexion au serveur...</p>
+                                <div class="w-64 h-4 border-2 border-neo-green rounded p-0.5">
+                                    <div class="bg-neo-green h-full ai-progress-bar"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div id="aiContent" class="text-neo-green text-lg leading-relaxed hidden font-display font-medium relative z-10"></div>
+                            
+                            <!-- Error -->
+                            <div id="aiError" class="hidden text-red-500 font-bold p-4 border-4 border-red-500 rounded flex items-center gap-3 bg-neo-dark relative z-10">
+                                <i class="fas fa-bomb text-2xl"></i> ERROR 404 : Serveur IA hors ligne.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="py-12 text-center text-slate-400 font-display font-bold uppercase tracking-[0.2em] mt-20">
+        <p>WEEVUP GAMING © 2026 — DESIGN LUDIQUE & ROBUSTE</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // --- 1. Animation Scroll Reveal ---
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, revealOptions);
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // --- 2. Sticker 100% Approuvé Draggable ---
+        dragElement(document.getElementById("sticker-100"));
+
+        function dragElement(elmnt) {
+          var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+          elmnt.onmousedown = dragMouseDown;
+          
+          function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+            elmnt.classList.add('cursor-grabbing');
+            elmnt.style.zIndex = 1000;
+          }
+          function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+          }
+          function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            elmnt.classList.remove('cursor-grabbing');
+          }
+        }
+
+        // --- 3. Effet 3D Tilt au survol ---
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                card.style.zIndex = 50;
+            });
+            card.addEventListener('mouseleave', () => {
+                const originalTransform = card.classList.contains('rotate-1') ? 'rotate(1deg)' : 
+                                          card.classList.contains('-rotate-1') ? 'rotate(-1deg)' : '';
+                card.style.transform = originalTransform;
+                card.style.zIndex = 1;
+            });
+        });
+
+        // --- 4. Carousel Boîte à Idées ---
+        const slider = document.getElementById('ideasCarousel');
+        const track1 = document.getElementById('track1');
+        
+        const track2 = track1.cloneNode(true);
+        track2.id = "track2";
+        slider.appendChild(track2);
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let autoScrollSpeed = 1;
+        let autoScrollInterval;
+
+        function startAutoScroll() {
+            autoScrollInterval = setInterval(() => {
+                if(!isDown) {
+                    slider.scrollLeft += autoScrollSpeed;
+                    if (slider.scrollLeft >= track1.offsetWidth) {
+                        slider.scrollLeft -= track1.offsetWidth;
+                    } else if (slider.scrollLeft <= 0) {
+                        slider.scrollLeft += track1.offsetWidth;
+                    }
+                }
+            }, 20);
+        }
+        startAutoScroll();
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.classList.add('cursor-grabbing');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('cursor-grabbing'); });
+        slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('cursor-grabbing'); });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+        
+        slider.addEventListener('touchstart', () => { isDown = true; });
+        slider.addEventListener('touchend', () => { isDown = false; });
+
+        // --- 5. Interface IA Interactive ---
+        const aiOptions = {
+            objective: { title: "Objectif", choices: ["Détente & Rire", "Collaboration", "Immersion", "Compétition", "Utilité (Sens)", "Réflexion", "Action & Dynamisme"] },
+            mechanic: { title: "Mécanique", choices: ["Bluff & Rôles cachés", "Association d'idées", "Gestion & Négociation", "Coopération asymétrique", "Hasard & Risque"] },
+            format: { title: "Format", choices: ["Challenge multi-activités", "Escape Game / Enquête", "Plateau / Stratégie", "Construction (Maker)", "Phygital", "Ice-breaker"] },
+            theme: { title: "Thématique", choices: ["Engagement Solidaire", "Économie Circulaire", "Diversité & Inclusion", "Climat & Énergie", "Éthique & Transparence", "Qualité de Vie (QVCT)", "Numérique responsable"] },
+            universe: { title: "Univers", choices: ["Science-Fiction", "Thriller / Urgence", "Enquête Policière", "Utopie / Solarpunk", "Incarner les 'Méchants'"] },
+            tone: { title: "Le Ton", choices: ["Léger & Autodérision", "Sérieux / Instructif", "Mystérieux / Suspense", "Inspirant / Positif"] }
+        };
+
+        const aiState = { objective: 0, mechanic: 0, format: 0, theme: 0, universe: 0, tone: 0 };
+        const btnExportPDF = document.getElementById('btnExportPDF');
+        let activeDropdown = null;
+
+        function renderAiDropdowns() {
+            const grid = document.getElementById('aiParamGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(aiOptions).forEach(key => {
+                const opt = aiOptions[key];
+                const currentChoice = opt.choices[aiState[key]];
+                const isEdited = aiState[key] !== 0;
+                
+                let optionsHtml = '';
+                opt.choices.forEach((choice, index) => {
+                    const isSelected = index === aiState[key];
+                    optionsHtml += `
+                        <div class="px-4 py-3 text-sm cursor-pointer hover:bg-slate-100 border-b border-slate-200 last:border-0 flex items-center justify-between ${isSelected ? 'font-bold bg-neo-yellow/20' : ''}" 
+                             onclick="event.stopPropagation(); selectAiOption('${key}', ${index})">
+                            ${choice}
+                            ${isSelected ? '🎯' : ''}
+                        </div>
+                    `;
+                });
+
+                const isOpen = activeDropdown === key;
+                const buttonShadow = isOpen ? 'shadow-none translate-y-[4px]' : 'shadow-[4px_4px_0_#0f172a]';
+                const editedBg = isEdited ? 'bg-neo-yellow/10' : 'bg-white';
+
+                grid.innerHTML += `
+                    <div class="relative w-full" id="dropdown-container-${key}">
+                        <div class="btn-brutal w-full ${editedBg} border-neo p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${buttonShadow}" onclick="toggleDropdown('${key}', event)">
+                            <div class="flex flex-col text-left overflow-hidden">
+                                <span class="font-display text-[10px] font-black uppercase tracking-widest ${isEdited ? 'text-neo-dark' : 'text-slate-400'} mb-1">${opt.title}</span>
+                                <span class="text-sm font-bold text-neo-dark truncate block">${currentChoice}</span>
+                            </div>
+                            <i class="fas fa-caret-down text-lg text-slate-800 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}" id="icon-${key}"></i>
+                        </div>
+                        
+                        <div id="menu-${key}" class="${isOpen ? '' : 'hidden'} absolute top-[calc(100%+8px)] left-0 w-full bg-white border-neo shadow-neo z-50 overflow-hidden py-1 rounded">
+                            <div class="max-h-48 overflow-y-auto no-scrollbar">
+                                ${optionsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.toggleDropdown = function(key, event) {
+            event.stopPropagation();
+            
+            if (activeDropdown === key) {
+                activeDropdown = null;
+            } else {
+                activeDropdown = key;
+            }
+            renderAiDropdowns();
+        };
+
+        window.selectAiOption = function(key, index) {
+            aiState[key] = index;
+            activeDropdown = null;
+            renderAiDropdowns();
+            btnExportPDF.classList.add('hidden');
+        };
+
+        document.addEventListener('click', () => {
+            if (activeDropdown) {
+                document.getElementById(`menu-${activeDropdown}`).classList.add('hidden');
+                document.getElementById(`icon-${activeDropdown}`).classList.remove('rotate-180');
+                activeDropdown = null;
+            }
+        });
+
+        renderAiDropdowns();
+
+        // --- 6. Intégration Gemini API avec Confettis ---
+        const btnGenerateAI = document.getElementById('btnGenerateAI');
+        const aiResultContainer = document.getElementById('aiResultContainer');
+        const aiLoading = document.getElementById('aiLoading');
+        const aiContent = document.getElementById('aiContent');
+        const aiError = document.getElementById('aiError');
+        const aiExtraInstructions = document.getElementById('aiExtraInstructions');
+
+        async function fetchGeminiResponse(prompt) {
+            const apiKey = ""; 
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
+            let retries = 5, delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucune réponse générée.";
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        async function typeWriterHTML(element, htmlString, speed = 10) {
+            element.innerHTML = '';
+            element.classList.remove('hidden');
+            let i = 0;
+            let isTag = false;
+            let currentHTML = '';
+            
+            return new Promise(resolve => {
+                function type() {
+                    if (i < htmlString.length) {
+                        currentHTML += htmlString.charAt(i);
+                        element.innerHTML = currentHTML + '<span class="inline-block animate-pulse align-middle leading-none ml-1 text-neo-green">█</span>';
+                        
+                        if (htmlString.charAt(i) === '<') isTag = true;
+                        if (htmlString.charAt(i) === '>') isTag = false;
+                        
+                        i++;
+                        setTimeout(type, isTag ? 0 : speed);
+                    } else {
+                        element.innerHTML = currentHTML + '<span class="inline-block animate-pulse align-middle leading-none ml-1 text-neo-green">█</span>';
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+
+        function throwConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+              var timeLeft = animationEnd - Date.now();
+
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              var particleCount = 50 * (timeLeft / duration);
+              confetti({
+                ...defaults, particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+                colors: ['#4ade80', '#fde047', '#f472b6', '#60a5fa']
+              });
+              confetti({
+                ...defaults, particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+                colors: ['#4ade80', '#fde047', '#f472b6', '#60a5fa']
+              });
+            }, 250);
+        }
+
+        btnGenerateAI.addEventListener('click', async () => {
+            aiResultContainer.classList.remove('hidden');
+            btnExportPDF.classList.add('hidden');
+            aiLoading.classList.remove('hidden');
+            aiLoading.style.display = 'flex'; // Force flex to avoid UI jump
+            aiContent.classList.add('hidden');
+            aiError.classList.add('hidden');
+            aiContent.innerHTML = '';
+            
+            // Restart progress bar animation
+            const bar = document.querySelector('.ai-progress-bar');
+            bar.style.animation = 'none';
+            bar.offsetHeight; /* trigger reflow */
+            bar.style.animation = null; 
+
+            const originalBtnHtml = btnGenerateAI.innerHTML;
+            btnGenerateAI.innerHTML = '⚙️ Moulinage...';
+            btnGenerateAI.disabled = true;
+            
+            const selectedParams = {
+                objectif: aiOptions.objective.choices[aiState.objective],
+                mecanique: aiOptions.mechanic.choices[aiState.mechanic],
+                format: aiOptions.format.choices[aiState.format],
+                thematique: aiOptions.theme.choices[aiState.theme],
+                univers: aiOptions.universe.choices[aiState.universe],
+                ton: aiOptions.tone.choices[aiState.tone]
+            };
+            const extra = aiExtraInstructions.value.trim();
+
+            const promptContext = `Tu es un concepteur de jeux déjanté et expert en team building. L'équipe 'Weevup' veut créer son jeu.
+            Génère UN concept de jeu sous forme de 'pitch' (Titre accrocheur, Contexte, But du jeu, Mécanique principale) en utilisant STRICTEMENT :
+            - Objectif : ${selectedParams.objectif}
+            - Mécanique : ${selectedParams.mecanique}
+            - Format : ${selectedParams.format}
+            - Thème : ${selectedParams.thematique}
+            - Univers : ${selectedParams.univers}
+            - Ton : ${selectedParams.ton}
+            ${extra ? `\nConsigne bonus (très important) : "${extra}"` : ''}
+            
+            Rédige en français, avec des puces et des titres en gras, 3 paragraphes dynamiques. Pas de formatage complexe (*), juste des **gras** et des sauts de ligne.`;
+            
+            try {
+                const text = await fetchGeminiResponse(promptContext);
+                
+                const formattedHtml = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-display font-black text-xl uppercase text-white bg-neo-green/20 px-1">$1</strong>')
+                    .replace(/### (.*?)\n/g, '<h3 class="font-display text-2xl font-black mt-6 mb-3 border-b-4 border-neo-green inline-block">$1</h3><br>')
+                    .replace(/\n\n/g, '<br><br>')
+                    .replace(/\n/g, '<br>');
+                
+                aiLoading.classList.add('hidden');
+                aiLoading.style.display = '';
+                throwConfetti(); // Explosion de victoire !
+                await typeWriterHTML(aiContent, formattedHtml);
+                btnExportPDF.classList.remove('hidden');
+            } catch (err) {
+                aiLoading.classList.add('hidden');
+                aiLoading.style.display = '';
+                aiError.classList.remove('hidden');
+            } finally {
+                btnGenerateAI.innerHTML = '<i class="fas fa-bolt text-neo-yellow"></i> Générer !';
+                btnGenerateAI.disabled = false;
+            }
+        });
+
+        // --- 7. Export PDF ---
+        btnExportPDF.addEventListener('click', () => {
+            const originalText = btnExportPDF.innerHTML;
+            btnExportPDF.innerHTML = '⏳ Impression...';
+            btnExportPDF.disabled = true;
+
+            const element = document.createElement('div');
+            element.style.padding = '40px';
+            element.style.fontFamily = "'Courier New', Courier, monospace";
+            element.style.color = '#0f172a';
+            element.style.backgroundColor = '#fefce8';
+            element.style.width = '800px';
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+            element.style.top = '0';
+            
+            const extra = aiExtraInstructions.value.trim();
+            const rawContent = aiContent.innerHTML;
+
+            element.innerHTML = `
+                <div style="border: 4px solid #0f172a; padding: 30px; margin-bottom: 30px; background-color: #fde047; box-shadow: 8px 8px 0px #0f172a; position: relative;">
+                    <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%) rotate(-2deg); width: 80px; height: 30px; background: rgba(255,255,255,0.7); border: 2px solid #000;"></div>
+                    <div style="font-weight: bold; letter-spacing: 3px; font-size: 12px; margin-bottom: 10px;">AGENCE WEEVUP // DOSSIER CONFIDENTIEL</div>
+                    <h1 style="font-size: 42px; margin: 0; font-weight: 900; text-transform: uppercase; font-family: 'Arial Black', sans-serif;">PITCH DU JEU RSE</h1>
+                    <p style="margin-top: 10px; font-weight: bold; border-top: 2px solid #0f172a; padding-top: 10px;">Généré par La Machine à Idées le ${new Date().toLocaleDateString('fr-FR')}</p>
+                </div>
+                
+                <div style="border: 4px solid #0f172a; padding: 25px; margin-bottom: 30px; background-color: #ffffff; box-shadow: 4px 4px 0px #0f172a;">
+                    <h3 style="margin-top: 0; font-size: 18px; text-transform: uppercase; font-weight: 900; font-family: 'Arial Black', sans-serif; border-bottom: 2px dashed #0f172a; padding-bottom: 10px; margin-bottom: 15px;">Filtres de la Machine :</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🎯 Objectif: ${aiOptions.objective.choices[aiState.objective]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #4ade80;">⚙️ Méca: ${aiOptions.mechanic.choices[aiState.mechanic]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">⏱️ Format: ${aiOptions.format.choices[aiState.format]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🌱 Thème: ${aiOptions.theme.choices[aiState.theme]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🚀 Univers: ${aiOptions.universe.choices[aiState.universe]}</span>
+                        <span style="border: 2px solid #0f172a; padding: 6px 10px; font-weight: bold; font-size: 12px; background-color: #f8fafc;">🎭 Ton: ${aiOptions.tone.choices[aiState.tone]}</span>
+                    </div>
+                    ${extra ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #0f172a; font-weight: bold; background-color: #fee2e2; padding: 10px; border-radius: 4px;">⚠️ Règle d'or imposée : "${extra}"</div>` : ''}
+                </div>
+                
+                <div style="font-size: 16px; line-height: 1.8; background-color: #ffffff; padding: 30px; border: 4px solid #0f172a; box-shadow: 6px 6px 0px #0f172a;">
+                    ${rawContent.replace(/class="[^"]*"/g, '')}
+                </div>
+            `;
+
+            document.body.appendChild(element);
+
+            const opt = {
+                margin:       15,
+                filename:     'Weevup_Jeu_RSE.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.removeChild(element);
+                btnExportPDF.innerHTML = '<i class="fas fa-print"></i> PDF';
+                btnExportPDF.disabled = false;
+            }).catch(err => {
+                console.error(err);
+                document.body.removeChild(element);
+                btnExportPDF.innerHTML = 'Erreur';
+                btnExportPDF.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
